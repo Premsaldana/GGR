@@ -1,0 +1,587 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Alex+Brush&display=swap');
+/* css for headings*/
+/* styles.css */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&display=swap');
+
+.alex-brush-regular {
+    font-family: "Alex Brush", serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+  
+
+.heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    font-weight: 400;
+    color: #333;
+    text-align: left;
+    position: relative;
+    display: inline-block;
+    padding-bottom: 5px;
+}
+
+.heading::after {
+    content: "";
+    display: block;
+    width: 80px;
+    height: 3px;
+    background-color: #C89722; /* Gold underline */
+    margin-top: 5px;
+}
+
+
+
+
+/* .image img,
+.slide {
+    width: 100%;
+    height: 500px; /* Set a fixed height for consistency */
+    /* object-fit: cover; /* Ensures images maintain aspect ratio without distortion */
+/* } */ */
+
+#image-slider img {
+    width: 100%;
+    height: 500px; /* Same height for slider images */
+    object-fit: cover;
+} */
+
+
+
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}
+
+header {
+    background: #333;
+    color: #fff;
+    padding: 10px 0;
+    text-align: center;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+}
+#accommodations{
+    display:grid;
+    justify-content: center;
+
+    
+}
+
+
+nav ul li {
+    display: inline;
+    margin: 0 15px;
+}
+
+nav ul li a {
+    color: #fff;
+    text-decoration: none;
+}
+
+#hero {
+    background: url('hero-image.jpg') no-repeat center center/cover;
+    color: #fff;
+    padding: 50px 0;
+    text-align: center;
+}
+
+section {
+    padding: 20px;
+    margin: 20px;
+}
+
+.room {
+    border: 1px solid #ccc;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+footer {
+    background: #333;
+    color: #fff;
+    text-align: center;
+    padding: 10px 0;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+form label {
+    margin: 10px 0 5px;
+}
+
+form input, form select {
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+button {
+    background: #5cb85c;
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #4cae4c;
+}
+.logo-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.logo {
+    width: 100px; /* Adjust the size of the logo */
+    height: auto;
+    margin-right: 15px; /* Space between logo and hotel name */
+}
+        .container {
+            display: flex;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            max-width: 1200px;
+            max-height: 800px;
+        }
+
+        .image {
+            flex: 1;
+        }
+
+        .image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .content h1 {
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+
+        .content p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+
+
+
+
+
+
+        #image-slider {
+            position: relative;
+            max-width: 100%;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+        
+        .slider {
+            position: relative;
+        }
+        
+        .slide {
+            display: none;
+            width: 100%;
+            height: auto;
+        }
+        
+        .slide.active {
+            display: block;
+        }
+        
+        button.prev, button.next {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(255, 255, 255, 0.7);
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+            font-size: 18px;
+        }
+        
+        button.prev {
+            left: 10px;
+        }
+        
+        button.next {
+            right: 10px;
+        }
+        
+        #image-slider img {
+            width: 100%;
+            height: auto;
+        }
+
+
+/*ammenities*/
+#amenities{
+            display: grid;
+            text-align: center;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 0px
+}
+.column {
+    flex: 1;
+    min-width: 250px;
+}
+h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    display: -ms-inline-flexbox;
+}
+ul {
+    list-style-type: disc;
+    text-align: left;
+    padding: 0;
+    display: inline-block;
+}
+li {
+    margin-bottom: 5px;
+}
+.bold {
+    font-weight: bold;
+}
+
+.centre{
+   display: grid;
+   justify-content: center;
+}
+
+
+
+/* css for headings*/
+/* styles.css */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&display=swap');
+
+.heading {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    font-weight: 400;
+    color: #333;
+    text-align: left;
+    position: relative;
+    
+    padding-bottom: 5px;
+}
+
+.heading::after {
+    content: "";
+    display: block;
+    width: 80px;
+    height: 3px;
+    background-color: #C89722; /* Gold underline */
+    margin-top: 5px;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}
+
+header {
+    background: #333;
+    color: #fff;
+    padding: 10px 0;
+    text-align: center;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+}
+#accommodations{
+    display:grid;
+    justify-content: center;
+}
+
+nav ul li {
+    display: inline;
+    margin: 0 15px;
+}
+
+nav ul li a {
+    color: #fff;
+    text-decoration: none;
+}
+
+#hero {
+    background: url('hero-image.jpg') no-repeat center center/cover;
+    color: #fff;
+    padding: 50px 0;
+    text-align: center;
+}
+
+section {
+    padding: 20px;
+    margin: 20px;
+}
+
+.room {
+    border: 1px solid #ccc;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+footer {
+    background: #333;
+    color: #fff;
+    text-align: center;
+    padding: 10px 0;
+}
+
+.image img {
+    /* width: 100%; */
+    height: 500px; 
+    object-fit: cover; /* Ensures images maintain aspect ratio without distortion */
+}
+
+#image-slider img {
+    width: 100%;
+    height: 500px; 
+    object-fit: contain;
+}
+
+
+
+.whatsapp-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #25D366;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    z-index: 1000;
+}
+.whatsapp-widget img {
+    width: 40px;
+    height: 40px;
+}
+
+
+
+
+
+
+
+
+/* Responsive Styles */
+@media screen and (max-width: 1024px) {
+    .container {
+        flex-direction: column;
+        max-height: none;
+    }
+    .image img {
+        height: auto;
+    }
+    .content {
+        padding: 15px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    header {
+        text-align: center;
+        padding: 15px;
+        position: relative;
+    }
+    .menu-toggle {
+        display: block;
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 10px;
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1100;
+        color: white;
+    }
+    nav {
+        position: relative;
+        z-index: 1000;
+    }
+    nav ul {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        position: absolute;
+        top: 60px;
+        left: 0;
+        width: 100%;
+        background: rgba(51, 51, 51, 0.95);
+        padding: 10px 0;
+    }
+    nav ul.active {
+        display: flex;
+    }
+    nav ul li {
+        margin: 10px 0;
+    }
+    .heading {
+        font-size: 28px;
+        text-align: center;
+    }
+    .whatsapp-widget {
+        width: 50px;
+        height: 50px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .logo {
+        width: 80px;
+    }
+    .container {
+        padding: 10px;
+    }
+    .content h1 {
+        font-size: 20px;
+        text-align: center;
+    }
+    .content p {
+        font-size: 14px;
+    }
+    button.prev, button.next {
+        font-size: 14px;
+        padding: 5px;
+    }
+}
+
+
+
+.header-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 20px;
+    position: relative;
+}
+.logo-section {
+    display: flex;
+    align-items: center;
+}
+.logo {
+    width: 100px;
+    height: auto;
+    margin-right: 15px;
+}
+.top-contact {
+    position: absolute;
+    right: 20px;
+    font-size: 16px;
+}
+.top-contact a {
+    color: white;
+    text-decoration: none;
+}
+.menu-toggle {
+    display: none;
+}
+.video-section {
+    text-align: center;
+    margin: 40px 0;
+    position: relative;
+}
+.video-container {
+    position: relative;
+    display: inline-block;
+}
+.thumbnail {
+    width: 80%;
+    max-width: 800px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+.play-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 50px;
+    padding: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+.video-section video {
+    width: 80%;
+    max-width: 800px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: block;
+}
+/* Responsive Styles */
+@media screen and (max-width: 768px) {
+    .header-container {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .top-contact {
+        position: relative;
+        right: auto;
+        margin-top: 10px;
+    }
+    .thumbnail, .video-section video {
+        width: 100%;
+    }
+    .menu-toggle {
+        display: block;
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 10px;
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1100;
+        color: white;
+    }
+}
+@media screen and (max-width: 480px) {
+    .logo {
+        width: 80px;
+    }
+    .top-contact {
+        font-size: 14px;
+    }
+}
+
