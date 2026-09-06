@@ -37,12 +37,20 @@ const reservationSchema = z.object({
   advanceReceivedMinorUnits: z.number().min(0).optional(),
   advanceReceivedAt: z.string().optional(),
   notes: z.string().optional(),
-  lineItems: z.array(z.object({
-    category: z.string().min(1),
+  
+  // Pricing inputs
+  accommodationRateMinorUnits: z.number().min(0),
+  isNightlyRate: z.boolean(),
+  extraPersonQuantity: z.number().min(0).default(0),
+  extraPersonRateMinorUnits: z.number().min(0).default(80000),
+  earlyCheckInMinorUnits: z.number().min(0).default(0),
+  lateCheckOutMinorUnits: z.number().min(0).default(0),
+  securityDepositMinorUnits: z.number().min(0).default(500000),
+  taxPercentage: z.number().min(0).default(0),
+  additionalServices: z.array(z.object({
     description: z.string().min(1),
     quantity: z.number().min(1),
     rateMinorUnits: z.number().min(0),
-    amountMinorUnits: z.number().min(0)
   })).optional()
 });
 
@@ -113,20 +121,93 @@ export async function createReservation(data: z.infer<typeof reservationSchema>)
         paymentMode: validData.paymentMode || null,
         advanceReceivedMinorUnits: validData.advanceReceivedMinorUnits || null,
         advanceReceivedAt: validData.advanceReceivedAt ? new Date(validData.advanceReceivedAt) : null,
+        securityDepositMinorUnits: validData.securityDepositMinorUnits,
         notes: validData.notes || null,
         createdBy: session.userId,
         createdAt: new Date(),
         updatedAt: new Date(),
       }).run();
 
-      if (validData.lineItems && validData.lineItems.length > 0) {
-        const items = validData.lineItems.map((li, index) => ({
+      const checkIn = new Date(validData.checkInDate);
+      const checkOut = new Date(validData.checkOutDate);
+      const nights = Math.max(1, Math.round((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)));
+      
+      const generatedLineItems = [];
+      if (validData.isNightlyRate) {
+        generatedLineItems.push({
+          category: 'Accommodation',
+          description: `Rent for ${nights} night(s)`,
+          quantity: nights,
+          rateMinorUnits: validData.accommodationRateMinorUnits,
+          taxRate: validData.taxPercentage,
+          amountMinorUnits: nights * validData.accommodationRateMinorUnits
+        });
+      } else {
+        generatedLineItems.push({
+          category: 'Accommodation',
+          description: `Total Rent`,
+          quantity: 1,
+          rateMinorUnits: validData.accommodationRateMinorUnits,
+          taxRate: validData.taxPercentage,
+          amountMinorUnits: validData.accommodationRateMinorUnits
+        });
+      }
+
+      if (validData.extraPersonQuantity > 0) {
+        generatedLineItems.push({
+          category: 'Additional charges',
+          description: 'Extra Person',
+          quantity: validData.extraPersonQuantity,
+          rateMinorUnits: validData.extraPersonRateMinorUnits,
+          taxRate: validData.taxPercentage,
+          amountMinorUnits: validData.extraPersonQuantity * validData.extraPersonRateMinorUnits
+        });
+      }
+
+      if (validData.earlyCheckInMinorUnits > 0) {
+        generatedLineItems.push({
+          category: 'Additional charges',
+          description: 'Early Check-in',
+          quantity: 1,
+          rateMinorUnits: validData.earlyCheckInMinorUnits,
+          taxRate: validData.taxPercentage,
+          amountMinorUnits: validData.earlyCheckInMinorUnits
+        });
+      }
+
+      if (validData.lateCheckOutMinorUnits > 0) {
+        generatedLineItems.push({
+          category: 'Additional charges',
+          description: 'Late Check-out',
+          quantity: 1,
+          rateMinorUnits: validData.lateCheckOutMinorUnits,
+          taxRate: validData.taxPercentage,
+          amountMinorUnits: validData.lateCheckOutMinorUnits
+        });
+      }
+
+      if (validData.additionalServices) {
+        for (const service of validData.additionalServices) {
+          generatedLineItems.push({
+            category: 'Additional services',
+            description: service.description,
+            quantity: service.quantity,
+            rateMinorUnits: service.rateMinorUnits,
+            taxRate: validData.taxPercentage,
+            amountMinorUnits: service.quantity * service.rateMinorUnits
+          });
+        }
+      }
+
+      if (generatedLineItems.length > 0) {
+        const items = generatedLineItems.map((li, index) => ({
           id: crypto.randomUUID(),
           reservationId,
           category: li.category,
           description: li.description,
           quantity: li.quantity,
           rateMinorUnits: li.rateMinorUnits,
+          taxRate: li.taxRate,
           amountMinorUnits: li.amountMinorUnits,
           sortOrder: index,
         }));
@@ -172,9 +253,8 @@ export async function calculateInvoiceAction(input: InvoiceCalculationInput) {
 }
 
 export async function issueInvoiceAction(reservationId: string, clientDepositMinorUnits?: number) {
-  const session = await requireAdmin();
-  
   try {
+    const session = await requireAdmin();
     const result = db.transaction((tx) => {
       // 1. Reload the reservation and line items from the database
       const reservation = tx.select().from(reservations).where(eq(reservations.id, reservationId)).get();
@@ -196,7 +276,7 @@ export async function issueInvoiceAction(reservationId: string, clientDepositMin
       const input: InvoiceCalculationInput = {
         lineItems,
         advanceReceivedMinorUnits: reservation.advanceReceivedMinorUnits ?? 0,
-        refundableSecurityDepositMinorUnits: clientDepositMinorUnits ?? 500000,
+        refundableSecurityDepositMinorUnits: reservation.securityDepositMinorUnits ?? clientDepositMinorUnits ?? 500000,
       };
       
       const calcResult = calculateInvoice(input);
@@ -210,9 +290,12 @@ export async function issueInvoiceAction(reservationId: string, clientDepositMin
       const invoiceNumber = `GGR-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`;
       const invoiceId = crypto.randomUUID();
 
+      const guest = tx.select().from(guests).where(eq(guests.id, reservation.guestId)).get();
+
       const snapshot = {
         input,
         calculation: calcResult,
+        guestName: guest?.fullName || 'Guest name pending',
       };
 
       tx.insert(invoices).values({
@@ -248,8 +331,8 @@ export async function issueInvoiceAction(reservationId: string, clientDepositMin
     });
     return { success: true, ...result };
   } catch (err: any) {
-    console.error('Invoice issuance failed', err);
-    return { error: err.message || 'Failed to issue invoice', type: 'SERVER_ERROR' };
+    console.error('Invoice issuance failed with error:', err.message || 'Unknown error');
+    return { error: 'Failed to issue invoice. Please verify your permissions and try again.', type: 'SERVER_ERROR' };
   }
 }
 

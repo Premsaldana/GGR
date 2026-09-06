@@ -41,6 +41,7 @@ export const reservations = sqliteTable('reservations', {
   paymentStatus: text('payment_status').notNull(), // 'not_requested', 'qr_generated', 'paid', etc.
   adults: integer('adults').notNull(),
   children: integer('children').notNull(),
+  securityDepositMinorUnits: integer('security_deposit_minor_units'),
   paymentMode: text('payment_mode'), // 'UPI', 'CASH', 'BANK_TRANSFER'
   advanceReceivedMinorUnits: integer('advance_received_minor_units'),
   advanceReceivedAt: integer('advance_received_at', { mode: 'timestamp' }),
@@ -81,6 +82,9 @@ export const invoices = sqliteTable('invoices', {
   snapshotJson: text('snapshot_json'), // Stringified JSON of invoice view
   createdBy: text('created_by').references(() => users.id),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  parentInvoiceId: text('parent_invoice_id'),
+  finalizedAt: integer('finalized_at', { mode: 'timestamp' }),
+  finalizedBy: text('finalized_by').references(() => users.id),
 });
 
 export const invoicePayments = sqliteTable('invoice_payments', {
@@ -150,3 +154,24 @@ export const authChallenges = sqliteTable('auth_challenges', {
   consumed: integer('consumed', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
+
+export const paymentProofs = sqliteTable('payment_proofs', {
+  id: text('id').primaryKey(),
+  invoiceId: text('invoice_id').notNull().references(() => invoices.id),
+  shareLinkId: text('share_link_id').notNull().references(() => shareLinks.id),
+  storageProvider: text('storage_provider').notNull(), // 'local' | 's3'
+  storageKey: text('storage_key').notNull(),
+  mimeType: text('mime_type').notNull(),
+  sizeBytes: integer('size_bytes').notNull(),
+  status: text('status').notNull(), // 'pending_review', 'verified', 'rejected', 'resubmit_requested'
+  submittedAt: integer('submitted_at', { mode: 'timestamp' }).notNull(),
+  reviewedAt: integer('reviewed_at', { mode: 'timestamp' }),
+  reviewedBy: text('reviewed_by').references(() => users.id),
+  adminNote: text('admin_note'),
+  verifiedAmountMinorUnits: integer('verified_amount_minor_units'),
+  paymentMode: text('payment_mode'),
+  paymentReference: text('payment_reference'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+});
+

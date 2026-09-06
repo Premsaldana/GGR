@@ -27,7 +27,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
           <Link href="/admin/calendar" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/10 transition text-sm">
             <Calendar size={18} /> Calendar
           </Link>
-          <Link href="/admin/calendar" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/10 transition text-sm opacity-50 cursor-not-allowed">
+          <Link href="/admin/invoices" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/10 transition text-sm">
             <FileText size={18} /> Invoices
           </Link>
         </nav>

@@ -162,6 +162,53 @@ async function runTests() {
     console.log('❌ Test 4 Failed');
   }
 
+  // Test 5: Route Simulation (Expired/Revoked Token)
+  console.log('Test 5: Route Simulation (Expired/Revoked Token)');
+  const routeTokenHash1 = crypto.createHash('sha256').update(rawToken).digest('hex');
+  const routeShareLink1 = db.select().from(shareLinks).where(eq(shareLinks.token, routeTokenHash1)).get();
+  let test5Passed = false;
+  if (!routeShareLink1) {
+    // Should not happen, it exists but is expired
+  } else if (new Date(routeShareLink1.expiresAt) < new Date()) {
+    test5Passed = true; // Route would return notFound() here
+  }
+  console.log(test5Passed ? '✅ Test 5 Passed' : '❌ Test 5 Failed');
+
+  // Test 6: Route Simulation (Valid Token)
+  console.log('Test 6: Route Simulation (Valid Token)');
+  const rawToken2 = crypto.randomBytes(32).toString('hex');
+  const tokenHash2 = crypto.createHash('sha256').update(rawToken2).digest('hex');
+  const expiresAt2 = new Date();
+  expiresAt2.setDate(expiresAt2.getDate() + 7);
+  
+  db.insert(shareLinks).values({
+    id: crypto.randomUUID(),
+    invoiceId,
+    token: tokenHash2,
+    expiresAt: expiresAt2,
+    createdAt: new Date(),
+    createdBy: userId,
+  }).run();
+
+  const routeTokenHash2 = crypto.createHash('sha256').update(rawToken2).digest('hex');
+  const routeShareLink2 = db.select().from(shareLinks).where(eq(shareLinks.token, routeTokenHash2)).get();
+  
+  if (routeShareLink2 && new Date(routeShareLink2.expiresAt) > new Date()) {
+    console.log('✅ Test 6 Passed');
+  } else {
+    console.log('❌ Test 6 Failed');
+  }
+
+  // Test 7: Route Simulation (Unknown Token)
+  console.log('Test 7: Route Simulation (Unknown Token)');
+  const unknownTokenHash = crypto.createHash('sha256').update('invalid-token').digest('hex');
+  const unknownShareLink = db.select().from(shareLinks).where(eq(shareLinks.token, unknownTokenHash)).get();
+  if (!unknownShareLink) {
+    console.log('✅ Test 7 Passed');
+  } else {
+    console.log('❌ Test 7 Failed');
+  }
+
   console.log('--- Tests Complete ---');
 }
 

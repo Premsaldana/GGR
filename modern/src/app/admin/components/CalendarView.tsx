@@ -5,6 +5,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isTod
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import Link from 'next/link';
 import ReservationForm from './ReservationForm';
 import { getUnits, getReservations } from '../(protected)/calendar/actions';
 
@@ -111,9 +112,14 @@ export default function CalendarView() {
               </span>
               
               {dayOccupants.map((occ, i) => (
-                <div key={i} className="mt-1 w-full bg-[var(--color-admin-mineral)] border border-[var(--color-admin-terracotta)]/30 text-[10px] px-1 py-0.5 rounded truncate">
+                <Link 
+                  key={i} 
+                  href={`/admin/reservations/${occ.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="mt-1 w-full bg-[var(--color-admin-mineral)] border border-[var(--color-admin-terracotta)]/30 text-[10px] px-1 py-0.5 rounded truncate hover:bg-[var(--color-admin-terracotta)] hover:text-white transition-colors block"
+                >
                   {units.find(u => u.id === occ.unitId)?.displayName || 'Unit'} - {occ.bookingStatus}
-                </div>
+                </Link>
               ))}
             </button>
           );

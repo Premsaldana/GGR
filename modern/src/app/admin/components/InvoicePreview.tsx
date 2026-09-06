@@ -44,15 +44,15 @@ export function InvoicePreview({ invoiceId, reservation, calculation, lineItems,
           <p className="text-sm">Besides Colva Police Station, Colva–Benaulim Road,</p>
           <p className="text-sm">Salcete, South Goa – 403708</p>
           <div className="mt-4 text-sm space-y-1">
-            <p>📞 91-7813093075</p>
-            <p>✉️ goagardenresort@gmail.com</p>
-            <p>🌐 www.goagardenresort.com</p>
+            <p>Phone: 91-7813093075</p>
+            <p>Email: goagardenresort@gmail.com</p>
+            <p>Website: www.goagardenresort.com</p>
           </div>
         </div>
         <div className="text-right mt-6 md:mt-0">
           <h2 className="text-2xl font-bold tracking-widest text-[#B75E3C]">BOOKING INVOICE {isDraft && '(DRAFT)'}</h2>
           <div className="mt-4 text-sm space-y-2">
-            <p><span className="font-semibold">Reservation #:</span> {reservation.reservationNumber || <span className="text-red-500 italic">PROVISIONAL</span>}</p>
+            <p><span className="font-semibold">Reservation #:</span> {reservation.reservationNumber || <span className="text-red-500 italic">Pending</span>}</p>
             <p><span className="font-semibold">Date of Issue:</span> {isDraft ? <span className="italic">Not Issued</span> : new Date().toLocaleDateString('en-IN')}</p>
           </div>
         </div>
@@ -60,7 +60,7 @@ export function InvoicePreview({ invoiceId, reservation, calculation, lineItems,
 
       {/* Greeting */}
       <div className="mb-8">
-        <p>Dear {reservation.guestName || <span className="text-red-500 italic">PROVISIONAL</span>},</p>
+        <p>Dear {reservation.guestName || <span className="text-red-500 italic">Guest name pending</span>},</p>
         <p className="mt-2 text-sm leading-relaxed">
           Thank you for choosing Goa Garden Resort. We look forward to welcoming you and ensuring an unforgettable stay at our private pool villa in Colva, South Goa. Please find your booking details and invoice summary below.
         </p>
@@ -70,10 +70,10 @@ export function InvoicePreview({ invoiceId, reservation, calculation, lineItems,
       <div className="mb-8">
         <h3 className="bg-[#233B35] text-[#FFFCF6] py-2 px-4 font-semibold tracking-wider text-sm mb-4">RESERVATION DETAILS</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm px-4">
-          <p><span className="font-semibold">PROPERTY:</span> {reservation.unitDisplayName || <span className="text-red-500 italic">PROVISIONAL</span>}</p>
-          <p><span className="font-semibold">BOOKING STATUS:</span> {reservation.bookingStatus ? reservation.bookingStatus.toUpperCase() : <span className="text-red-500 italic">PROVISIONAL</span>}</p>
-          <p><span className="font-semibold">CHECK-IN:</span> {reservation.checkInDate || <span className="text-red-500 italic">PROVISIONAL</span>} at 1:00 PM</p>
-          <p><span className="font-semibold">CHECK-OUT:</span> {reservation.checkOutDate || <span className="text-red-500 italic">PROVISIONAL</span>} at 11:00 AM</p>
+          <p><span className="font-semibold">PROPERTY:</span> {reservation.unitDisplayName || <span className="text-red-500 italic">Pending</span>}</p>
+          <p><span className="font-semibold">BOOKING STATUS:</span> {reservation.bookingStatus ? reservation.bookingStatus.toUpperCase() : <span className="text-red-500 italic">Pending</span>}</p>
+          <p><span className="font-semibold">CHECK-IN:</span> {reservation.checkInDate || <span className="text-red-500 italic">Pending</span>} at 1:00 PM</p>
+          <p><span className="font-semibold">CHECK-OUT:</span> {reservation.checkOutDate || <span className="text-red-500 italic">Pending</span>} at 11:00 AM</p>
           <p><span className="font-semibold">NO. OF GUESTS:</span> Adults: {reservation.adults ?? '-'} | Children: {reservation.children ?? '-'}</p>
         </div>
       </div>
@@ -193,14 +193,14 @@ export function InvoicePreview({ invoiceId, reservation, calculation, lineItems,
       <div className="mb-8 text-xs text-[#718779] border-t border-[#E8E1D6] pt-6">
         <h3 className="font-semibold text-sm mb-3 text-[#1D2422]">PROPERTY POLICIES & HOUSE RULES</h3>
         <ul className="space-y-2">
-          <li><strong>❌ Cancellation Policy:</strong> No cancellation and no refund once booking is confirmed.</li>
-          <li><strong>🕖 Check-In / Check-Out:</strong> Check-In: 1:00 PM | Check-Out: 11:00 AM. Early/late checkout subject to availability & extra charges.</li>
-          <li><strong>🐾 Pets:</strong> Pets are strictly not allowed on the property.</li>
-          <li><strong>🔒 Security Deposit:</strong> Refundable deposit of Rs 5,000 payable at check-in.</li>
-          <li><strong>🏊 Swimming Pool:</strong> Pool hours: 8:00 AM to 8:00 PM. No music after 10:00 PM. Children must be supervised.</li>
-          <li><strong>🍳 Kitchen / Cooking:</strong> No kitchen available. Cooking inside the villa is not permitted.</li>
-          <li><strong>☕ Breakfast:</strong> Breakfast is not complimentary and not included.</li>
-          <li><strong>👥 Extra Guests:</strong> Extra person charge: Rs 800 per head per night.</li>
+          <li><strong>Cancellation Policy:</strong> No cancellation and no refund once booking is confirmed.</li>
+          <li><strong>Check-In / Check-Out:</strong> Check-In: 1:00 PM | Check-Out: 11:00 AM. Early/late checkout subject to availability & extra charges.</li>
+          <li><strong>Pets:</strong> Pets are strictly not allowed on the property.</li>
+          <li><strong>Security Deposit:</strong> Refundable deposit of Rs 5,000 payable at check-in.</li>
+          <li><strong>Swimming Pool:</strong> Pool hours: 8:00 AM to 8:00 PM. No music after 10:00 PM. Children must be supervised.</li>
+          <li><strong>Kitchen / Cooking:</strong> No kitchen available. Cooking inside the villa is not permitted.</li>
+          <li><strong>Breakfast:</strong> Breakfast is not complimentary and not included.</li>
+          <li><strong>Extra Guests:</strong> Extra person charge: Rs 800 per head per night.</li>
         </ul>
       </div>
 
@@ -220,7 +220,7 @@ export function InvoicePreview({ invoiceId, reservation, calculation, lineItems,
 
       <div className="mt-8 text-center text-xs text-[#718779]">
         <p>Queries? Call 91-7813093075 or goagardenresort@gmail.com</p>
-        <p className="mt-1">Thank you for choosing us! 🌴</p>
+        <p className="mt-1">Thank you for choosing us!</p>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Inter } from "next/font/google";
 import { SkipLink } from "@/components/ui/SkipLink";
 import { ResortHeader } from "@/components/resort/ResortHeader";
 import { ResortFooter } from "@/components/resort/ResortFooter";
+import { LayoutBoundary } from "@/components/resort/LayoutBoundary";
 import { siteConfig } from "@/content/site";
 import "./globals.css";
 
@@ -75,15 +76,12 @@ export default function RootLayout({
         {/* Accessibility: first focusable element */}
         <SkipLink />
 
-        {/* Shared shell */}
-        <ResortHeader />
-
-        {/* Main content — id matches SkipLink href */}
-        <main id="main-content" tabIndex={-1}>
+        <LayoutBoundary
+          header={<ResortHeader />}
+          footer={<ResortFooter />}
+        >
           {children}
-        </main>
-
-        <ResortFooter />
+        </LayoutBoundary>
       </body>
     </html>
   );

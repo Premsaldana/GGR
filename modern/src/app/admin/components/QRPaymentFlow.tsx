@@ -20,6 +20,7 @@ export function QRPaymentFlow({ invoiceId, totalMinorUnits, advanceMinorUnits, b
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState(false);
+  const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
 
   const loadData = async () => {
     const qr = await getLatestQRAction(invoiceId);
@@ -55,11 +56,16 @@ export function QRPaymentFlow({ invoiceId, totalMinorUnits, advanceMinorUnits, b
     if (res.error) {
       setError(res.error);
     } else {
-      // In a real app we'd show the raw token once. We can copy it to clipboard immediately.
       const url = `${window.location.origin}/share/${res.rawToken}`;
-      navigator.clipboard.writeText(url);
-      setCopiedToken(true);
-      setTimeout(() => setCopiedToken(false), 3000);
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopiedToken(true);
+        setTimeout(() => setCopiedToken(false), 3000);
+      } catch (err) {
+        // Fallback if clipboard API fails
+        console.warn('Clipboard API failed');
+      }
+      setGeneratedUrl(url);
       await loadData();
     }
     setLoading(false);
@@ -145,6 +151,19 @@ export function QRPaymentFlow({ invoiceId, totalMinorUnits, advanceMinorUnits, b
             <p className="text-sm text-green-600 flex items-center gap-1">
               <CheckCircle2 size={14}/> Link copied to clipboard!
             </p>
+          )}
+
+          {generatedUrl && (
+            <div className="mt-2 p-2 bg-gray-50 border rounded text-xs break-all flex flex-col gap-2">
+              <span className="font-semibold text-gray-700">One-time viewing link:</span>
+              <code className="text-blue-600">{generatedUrl}</code>
+              <button 
+                onClick={() => setGeneratedUrl(null)}
+                className="text-gray-500 hover:text-gray-700 self-end"
+              >
+                Clear
+              </button>
+            </div>
           )}
 
           {activeLinks.length > 0 && (
