@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --color-admin-ink: #1D2422;
+  --color-admin-botanical: #233B35;
+  --color-admin-mineral: #F5F1E9;
+  --color-admin-shell: #FFFCF6;
+  --color-admin-terracotta: #B75E3C;
+  --color-admin-brass: #B88A3B;
+  --color-admin-sage: #718779;
+  --color-admin-mist: #E8E1D6;
+  --color-admin-danger: #B8463D;
+}
