@@ -26,6 +26,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     let snapshot;
     try {
       snapshot = invoice.snapshotJson ? JSON.parse(invoice.snapshotJson) : null;
+      if (snapshot && snapshot.input && Array.isArray(snapshot.input.lineItems)) {
+        snapshot.input.lineItems = snapshot.input.lineItems.map((li: any) => ({
+          ...li,
+          amountMinorUnits: li.amountMinorUnits ?? (li.quantity * li.rateMinorUnits)
+        }));
+      }
     } catch (e) {
       snapshot = null;
     }

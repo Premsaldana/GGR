@@ -60,8 +60,11 @@ export async function uploadProofAction(formData: FormData) {
     }
 
     // Check if invoice is finalized or payment is already closed
-    // Assuming paymentStatus 'paid' or 'closed' implies payment is closed.
-    if (reservation.paymentStatus === 'paid' || invoice.status === 'cancelled') {
+    if (invoice.finalizedAt !== null || invoice.status === 'cancelled') {
+      return { error: 'Payment is already finalized or closed', success: false };
+    }
+
+    if (invoice.balanceMinorUnits <= 0) {
       return { error: 'Payment is already finalized or closed', success: false };
     }
 

@@ -20,23 +20,23 @@ const formSchema = z.object({
   children: z.number().min(0),
   bookingStatus: z.enum(['pending', 'confirmed', 'cancelled']),
   paymentMode: z.enum(['UPI', 'CASH', 'BANK_TRANSFER']).optional().or(z.literal('')),
-  advanceReceivedMinorUnits: z.number().min(0).optional(),
+  advanceReceived: z.number().min(0).optional(),
   advanceReceivedAt: z.string().optional(),
   notes: z.string().optional(),
   
   // Pricing inputs
-  accommodationRateMinorUnits: z.number().min(0),
+  accommodationRate: z.number().min(0),
   isNightlyRate: z.boolean(),
   extraPersonQuantity: z.number().min(0).default(0),
-  extraPersonRateMinorUnits: z.number().min(0).default(80000),
-  earlyCheckInMinorUnits: z.number().min(0).default(0),
-  lateCheckOutMinorUnits: z.number().min(0).default(0),
-  securityDepositMinorUnits: z.number().min(0).default(500000),
+  extraPersonRate: z.number().min(0).default(800),
+  earlyCheckIn: z.number().min(0).default(0),
+  lateCheckOut: z.number().min(0).default(0),
+  securityDeposit: z.number().min(0).default(5000),
   taxPercentage: z.number().min(0).default(0),
   additionalServices: z.array(z.object({
     description: z.string().min(1),
     quantity: z.number().min(1),
-    rateMinorUnits: z.number().min(0),
+    rate: z.number().min(0),
   })).optional()
 });
 
@@ -67,12 +67,12 @@ export default function ReservationForm({
       children: 0,
       bookingStatus: 'pending',
       isNightlyRate: true,
-      accommodationRateMinorUnits: 0,
+      accommodationRate: 0,
       extraPersonQuantity: 0,
-      extraPersonRateMinorUnits: 80000,
-      earlyCheckInMinorUnits: 0,
-      lateCheckOutMinorUnits: 0,
-      securityDepositMinorUnits: 500000,
+      extraPersonRate: 800,
+      earlyCheckIn: 0,
+      lateCheckOut: 0,
+      securityDeposit: 5000,
       taxPercentage: 0,
       additionalServices: []
     }
@@ -84,7 +84,17 @@ export default function ReservationForm({
     setServerError(null);
     const payload = {
       ...data,
-      paymentMode: data.paymentMode === '' ? undefined : (data.paymentMode as "UPI" | "CASH" | "BANK_TRANSFER" | undefined)
+      paymentMode: data.paymentMode === '' ? undefined : (data.paymentMode as "UPI" | "CASH" | "BANK_TRANSFER" | undefined),
+      accommodationRate: data.accommodationRate,
+      extraPersonRate: data.extraPersonRate,
+      earlyCheckIn: data.earlyCheckIn,
+      lateCheckOut: data.lateCheckOut,
+      securityDeposit: data.securityDeposit,
+      advanceReceived: data.advanceReceived || 0,
+      additionalServices: data.additionalServices?.map(s => ({
+        ...s,
+        rate: s.rate
+      }))
     };
     const res = await createReservation(payload);
     if ('error' in res && res.error) {
@@ -97,7 +107,7 @@ export default function ReservationForm({
   };
 
   const formValues = watch();
-  const advanceMinor = formValues.advanceReceivedMinorUnits || 0;
+  const advanceMinor = (formValues.advanceReceived || 0) * 100;
   
   let liveSummary = null;
   try {
@@ -109,7 +119,7 @@ export default function ReservationForm({
     const generatedLineItems = [];
     const taxRate = isNaN(formValues.taxPercentage || 0) ? 0 : (formValues.taxPercentage || 0);
 
-    const accomRate = isNaN(formValues.accommodationRateMinorUnits || 0) ? 0 : (formValues.accommodationRateMinorUnits || 0);
+    const accomRate = isNaN(formValues.accommodationRate || 0) ? 0 : (formValues.accommodationRate * 100);
     if (formValues.isNightlyRate) {
       generatedLineItems.push({
         category: 'Accommodation',
@@ -129,7 +139,7 @@ export default function ReservationForm({
     }
 
     const epQty = isNaN(formValues.extraPersonQuantity || 0) ? 0 : (formValues.extraPersonQuantity || 0);
-    const epRate = isNaN(formValues.extraPersonRateMinorUnits || 0) ? 0 : (formValues.extraPersonRateMinorUnits || 0);
+    const epRate = isNaN(formValues.extraPersonRate || 0) ? 0 : (formValues.extraPersonRate * 100);
     if (epQty > 0) {
       generatedLineItems.push({
         category: 'Additional charges',
@@ -140,7 +150,7 @@ export default function ReservationForm({
       });
     }
 
-    const eciAmt = isNaN(formValues.earlyCheckInMinorUnits || 0) ? 0 : (formValues.earlyCheckInMinorUnits || 0);
+    const eciAmt = isNaN(formValues.earlyCheckIn || 0) ? 0 : (formValues.earlyCheckIn * 100);
     if (eciAmt > 0) {
       generatedLineItems.push({
         category: 'Additional charges',
@@ -151,7 +161,7 @@ export default function ReservationForm({
       });
     }
 
-    const lcoAmt = isNaN(formValues.lateCheckOutMinorUnits || 0) ? 0 : (formValues.lateCheckOutMinorUnits || 0);
+    const lcoAmt = isNaN(formValues.lateCheckOut || 0) ? 0 : (formValues.lateCheckOut * 100);
     if (lcoAmt > 0) {
       generatedLineItems.push({
         category: 'Additional charges',
@@ -165,7 +175,7 @@ export default function ReservationForm({
     if (formValues.additionalServices) {
       for (const service of formValues.additionalServices) {
         const sQty = isNaN(service.quantity) ? 0 : service.quantity;
-        const sRate = isNaN(service.rateMinorUnits) ? 0 : service.rateMinorUnits;
+        const sRate = isNaN(service.rate) ? 0 : (service.rate * 100);
         generatedLineItems.push({
           category: 'Additional services',
           description: service.description || 'Service',
@@ -176,7 +186,7 @@ export default function ReservationForm({
       }
     }
 
-    const depositMinor = isNaN(formValues.securityDepositMinorUnits || 0) ? 0 : (formValues.securityDepositMinorUnits || 0);
+    const depositMinor = isNaN(formValues.securityDeposit || 0) ? 0 : (formValues.securityDeposit * 100);
 
     liveSummary = calculateInvoice({
       lineItems: generatedLineItems,
@@ -286,8 +296,8 @@ export default function ReservationForm({
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Accommodation Rate (paise)</label>
-                <input type="number" {...register("accommodationRateMinorUnits", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
+                <label className="block text-sm font-medium mb-1">Accommodation Rate (₹)</label>
+                <input type="number" {...register("accommodationRate", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
               </div>
               <div className="flex items-end pb-2">
                 <label className="flex items-center gap-2 cursor-pointer text-sm">
@@ -303,19 +313,19 @@ export default function ReservationForm({
                 <input type="number" {...register("extraPersonQuantity", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Extra Person Rate (paise)</label>
-                <input type="number" {...register("extraPersonRateMinorUnits", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="80000" />
+                <label className="block text-sm font-medium mb-1">Extra Person Rate (₹)</label>
+                <input type="number" {...register("extraPersonRate", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="800" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Early Check-in (paise)</label>
-                <input type="number" {...register("earlyCheckInMinorUnits", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
+                <label className="block text-sm font-medium mb-1">Early Check-in (₹)</label>
+                <input type="number" {...register("earlyCheckIn", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Late Check-out (paise)</label>
-                <input type="number" {...register("lateCheckOutMinorUnits", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
+                <label className="block text-sm font-medium mb-1">Late Check-out (₹)</label>
+                <input type="number" {...register("lateCheckOut", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
               </div>
             </div>
 
@@ -325,15 +335,15 @@ export default function ReservationForm({
                 <input type="number" step="0.1" {...register("taxPercentage", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Security Deposit (paise)</label>
-                <input type="number" {...register("securityDepositMinorUnits", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="500000" />
+                <label className="block text-sm font-medium mb-1">Security Deposit (₹)</label>
+                <input type="number" {...register("securityDeposit", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="5000" />
               </div>
             </div>
             
             <div className="pt-2 border-t mt-2 border-[var(--color-admin-mist)]">
               <div className="flex justify-between items-center pb-2">
                 <label className="block text-sm font-medium">Additional Services</label>
-                <button type="button" onClick={() => append({ description: '', quantity: 1, rateMinorUnits: 0 })} className="text-xs text-[var(--color-admin-terracotta)] hover:underline flex items-center gap-1">
+                <button type="button" onClick={() => append({ description: '', quantity: 1, rate: 0 } as any)} className="text-xs text-[var(--color-admin-terracotta)] hover:underline flex items-center gap-1">
                   <Plus size={14} /> Add Service
                 </button>
               </div>
@@ -343,7 +353,7 @@ export default function ReservationForm({
                   <div className="flex-1 grid grid-cols-3 gap-2">
                     <input type="text" {...register(`additionalServices.${index}.description`)} placeholder="Description" className="w-full px-2 py-1 text-sm border rounded" />
                     <input type="number" {...register(`additionalServices.${index}.quantity`, { valueAsNumber: true })} placeholder="Qty" className="w-full px-2 py-1 text-sm border rounded" />
-                    <input type="number" {...register(`additionalServices.${index}.rateMinorUnits`, { valueAsNumber: true })} placeholder="Rate (paise)" className="w-full px-2 py-1 text-sm border rounded" />
+                    <input type="number" {...register(`additionalServices.${index}.rate`, { valueAsNumber: true })} placeholder="Rate (₹)" className="w-full px-2 py-1 text-sm border rounded" />
                   </div>
                   <button type="button" onClick={() => remove(index)} className="p-1 text-red-500 hover:bg-red-50 rounded mt-0.5">
                     <Trash2 size={16} />
@@ -359,8 +369,8 @@ export default function ReservationForm({
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Advance Received (paise)</label>
-                <input type="number" {...register("advanceReceivedMinorUnits", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
+                <label className="block text-sm font-medium mb-1">Advance Received (₹)</label>
+                <input type="number" {...register("advanceReceived", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Advance Date</label>

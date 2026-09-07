@@ -26,58 +26,57 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
     return notFound();
   }
 
-  try {
-    // Hash the incoming token
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  let snapshot: any;
+  let qrArtifact: any;
+  let hasPendingProof = false;
+  let guestName = 'Guest name pending';
+  let unitName = 'Unit';
+  let reservationData: any;
+  let invoiceData: any;
 
+  try {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     const shareLink = db.select().from(shareLinks).where(eq(shareLinks.token, tokenHash)).get();
 
-    if (!shareLink) {
-      console.warn('Share page access denied: Token not found or revoked');
-      return notFound();
-    }
-
-    if (new Date(shareLink.expiresAt) < new Date()) {
-      console.warn('Share page access denied: Token expired');
+    if (!shareLink || new Date(shareLink.expiresAt) < new Date()) {
       return notFound();
     }
 
     const invoice = db.select().from(invoices).where(eq(invoices.id, shareLink.invoiceId)).get();
-    if (!invoice) {
-      console.warn('Share page access denied: Invoice not found');
-      return notFound();
-    }
+    if (!invoice) return notFound();
+    invoiceData = invoice;
 
     const reservation = db.select().from(reservations).where(eq(reservations.id, invoice.reservationId)).get();
-    if (!reservation) {
-      console.warn('Share page access denied: Reservation not found');
-      return notFound();
-    }
+    if (!reservation) return notFound();
+    reservationData = reservation;
 
     const unit = db.select().from(units).where(eq(units.id, reservation.unitId)).get();
+    unitName = unit?.displayName || 'Unit';
 
-    // Parse the snapshot JSON for line items
-    let snapshot;
     try {
       snapshot = invoice.snapshotJson ? JSON.parse(invoice.snapshotJson) : null;
     } catch (e) {
       snapshot = null;
     }
 
-  const qrArtifact = db.select().from(qrPaymentArtifacts)
-    .where(eq(qrPaymentArtifacts.invoiceId, invoice.id))
-    .orderBy(desc(qrPaymentArtifacts.artifactVersion))
-    .limit(1)
-    .get();
+    qrArtifact = db.select().from(qrPaymentArtifacts)
+      .where(eq(qrPaymentArtifacts.invoiceId, invoice.id))
+      .orderBy(desc(qrPaymentArtifacts.artifactVersion))
+      .limit(1)
+      .get();
 
-  const guestName = snapshot?.guestName || 'Guest name pending';
+    guestName = snapshot?.guestName || 'Guest name pending';
 
-  const pendingProofs = db.select().from(paymentProofs)
-    .where(eq(paymentProofs.invoiceId, invoice.id))
-    .all()
-    .filter(p => p.status === 'pending_review');
+    const pendingProofs = db.select().from(paymentProofs)
+      .where(eq(paymentProofs.invoiceId, invoice.id))
+      .all()
+      .filter(p => p.status === 'pending_review');
 
-  const hasPendingProof = pendingProofs.length > 0;
+    hasPendingProof = pendingProofs.length > 0;
+  } catch (err: any) {
+    console.warn('Share page error:', err.message);
+    return notFound();
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4 font-sans">
@@ -95,17 +94,21 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
             </div>
             <div className="flex justify-between items-start">
               <span className="text-gray-500">Reference</span>
-              <span className="font-medium text-right">{reservation.reservationNumber}</span>
+              <span className="font-medium text-right">{reservationData.reservationNumber}</span>
             </div>
             <div className="flex justify-between items-start">
               <span className="text-gray-500">Property</span>
-              <span className="font-medium text-right">{unit?.displayName || 'Unit'}</span>
+              <span className="font-medium text-right">{unitName}</span>
             </div>
             <div className="flex justify-between items-start">
               <span className="text-gray-500">Stay</span>
               <span className="font-medium text-right">
-                {reservation.checkInDate} to {reservation.checkOutDate}
+                {reservationData.checkInDate} to {reservationData.checkOutDate}
               </span>
+            </div>
+            <div className="flex justify-between items-start">
+              <span className="text-gray-500">Invoice Total</span>
+              <span className="font-medium text-right">Rs.{invoiceData.totalMinorUnits / 100}</span>
             </div>
           </div>
         </div>
@@ -142,8 +145,4 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
       </div>
     </div>
   );
-  } catch (err: any) {
-    console.warn('Share page error:', err.message);
-    return notFound();
-  }
 }

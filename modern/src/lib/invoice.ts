@@ -23,6 +23,13 @@ export interface InvoiceCalculationResult {
   amountInWords: string;
 }
 
+export function toPaise(rupees: number): number {
+  if (typeof rupees !== 'number' || isNaN(rupees) || !isFinite(rupees) || rupees < 0) {
+    throw new Error('Invalid rupee amount');
+  }
+  return Math.round(rupees * 100);
+}
+
 // Simple Indian numbering system amount in words
 export function convertRupeesToWords(amount: number): string {
   if (amount === 0) return 'Zero Rupees Only';

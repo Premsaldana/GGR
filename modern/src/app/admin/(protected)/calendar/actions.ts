@@ -6,6 +6,7 @@ import { guests, reservations, reservationLineItems, units, auditEvents } from '
 import { and, eq, lte, gte, or } from 'drizzle-orm';
 import { z } from 'zod';
 import crypto from 'crypto';
+import { toPaise } from '@/lib/invoice';
 
 export async function getUnits() {
   await requireAdmin();
@@ -34,23 +35,23 @@ const reservationSchema = z.object({
   children: z.number().min(0),
   bookingStatus: z.enum(['pending', 'confirmed', 'cancelled']),
   paymentMode: z.enum(['UPI', 'CASH', 'BANK_TRANSFER']).optional(),
-  advanceReceivedMinorUnits: z.number().min(0).optional(),
+  advanceReceived: z.number().min(0).optional(),
   advanceReceivedAt: z.string().optional(),
   notes: z.string().optional(),
   
   // Pricing inputs
-  accommodationRateMinorUnits: z.number().min(0),
+  accommodationRate: z.number().min(0),
   isNightlyRate: z.boolean(),
   extraPersonQuantity: z.number().min(0).default(0),
-  extraPersonRateMinorUnits: z.number().min(0).default(80000),
-  earlyCheckInMinorUnits: z.number().min(0).default(0),
-  lateCheckOutMinorUnits: z.number().min(0).default(0),
-  securityDepositMinorUnits: z.number().min(0).default(500000),
+  extraPersonRate: z.number().min(0).default(800),
+  earlyCheckIn: z.number().min(0).default(0),
+  lateCheckOut: z.number().min(0).default(0),
+  securityDeposit: z.number().min(0).default(5000),
   taxPercentage: z.number().min(0).default(0),
   additionalServices: z.array(z.object({
     description: z.string().min(1),
     quantity: z.number().min(1),
-    rateMinorUnits: z.number().min(0),
+    rate: z.number().min(0),
   })).optional()
 });
 
@@ -119,9 +120,9 @@ export async function createReservation(data: z.infer<typeof reservationSchema>)
         adults: validData.adults,
         children: validData.children,
         paymentMode: validData.paymentMode || null,
-        advanceReceivedMinorUnits: validData.advanceReceivedMinorUnits || null,
+        advanceReceivedMinorUnits: validData.advanceReceived !== undefined ? toPaise(validData.advanceReceived) : null,
         advanceReceivedAt: validData.advanceReceivedAt ? new Date(validData.advanceReceivedAt) : null,
-        securityDepositMinorUnits: validData.securityDepositMinorUnits,
+        securityDepositMinorUnits: toPaise(validData.securityDeposit),
         notes: validData.notes || null,
         createdBy: session.userId,
         createdAt: new Date(),
@@ -133,68 +134,73 @@ export async function createReservation(data: z.infer<typeof reservationSchema>)
       const nights = Math.max(1, Math.round((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)));
       
       const generatedLineItems = [];
+      const accomRateMinor = toPaise(validData.accommodationRate);
       if (validData.isNightlyRate) {
         generatedLineItems.push({
           category: 'Accommodation',
           description: `Rent for ${nights} night(s)`,
           quantity: nights,
-          rateMinorUnits: validData.accommodationRateMinorUnits,
+          rateMinorUnits: accomRateMinor,
           taxRate: validData.taxPercentage,
-          amountMinorUnits: nights * validData.accommodationRateMinorUnits
+          amountMinorUnits: nights * accomRateMinor
         });
       } else {
         generatedLineItems.push({
           category: 'Accommodation',
           description: `Total Rent`,
           quantity: 1,
-          rateMinorUnits: validData.accommodationRateMinorUnits,
+          rateMinorUnits: accomRateMinor,
           taxRate: validData.taxPercentage,
-          amountMinorUnits: validData.accommodationRateMinorUnits
+          amountMinorUnits: accomRateMinor
         });
       }
 
+      const epRateMinor = toPaise(validData.extraPersonRate);
       if (validData.extraPersonQuantity > 0) {
         generatedLineItems.push({
           category: 'Additional charges',
           description: 'Extra Person',
           quantity: validData.extraPersonQuantity,
-          rateMinorUnits: validData.extraPersonRateMinorUnits,
+          rateMinorUnits: epRateMinor,
           taxRate: validData.taxPercentage,
-          amountMinorUnits: validData.extraPersonQuantity * validData.extraPersonRateMinorUnits
+          amountMinorUnits: validData.extraPersonQuantity * epRateMinor
         });
       }
 
-      if (validData.earlyCheckInMinorUnits > 0) {
+      const eciMinor = toPaise(validData.earlyCheckIn);
+      if (eciMinor > 0) {
         generatedLineItems.push({
           category: 'Additional charges',
           description: 'Early Check-in',
           quantity: 1,
-          rateMinorUnits: validData.earlyCheckInMinorUnits,
+          rateMinorUnits: eciMinor,
           taxRate: validData.taxPercentage,
-          amountMinorUnits: validData.earlyCheckInMinorUnits
+          amountMinorUnits: eciMinor
         });
       }
 
-      if (validData.lateCheckOutMinorUnits > 0) {
+      const lcoMinor = toPaise(validData.lateCheckOut);
+      if (lcoMinor > 0) {
         generatedLineItems.push({
           category: 'Additional charges',
           description: 'Late Check-out',
           quantity: 1,
-          rateMinorUnits: validData.lateCheckOutMinorUnits,
+          rateMinorUnits: lcoMinor,
           taxRate: validData.taxPercentage,
-          amountMinorUnits: validData.lateCheckOutMinorUnits
+          amountMinorUnits: lcoMinor
         });
       }
 
       if (validData.additionalServices) {
         for (const service of validData.additionalServices) {
+          const sRateMinor = toPaise(service.rate);
           generatedLineItems.push({
             category: 'Additional services',
             description: service.description,
             quantity: service.quantity,
-            rateMinorUnits: service.rateMinorUnits,
+            rateMinorUnits: sRateMinor,
             taxRate: validData.taxPercentage,
-            amountMinorUnits: service.quantity * service.rateMinorUnits
+            amountMinorUnits: service.quantity * sRateMinor
           });
         }
       }
@@ -270,6 +276,7 @@ export async function issueInvoiceAction(reservationId: string, clientDepositMin
         quantity: li.quantity,
         rateMinorUnits: li.rateMinorUnits,
         taxRate: li.taxRate ?? undefined,
+        amountMinorUnits: li.amountMinorUnits,
       }));
 
       // 2. Recompute strictly on the server

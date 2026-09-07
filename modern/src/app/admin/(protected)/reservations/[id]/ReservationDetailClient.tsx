@@ -79,7 +79,12 @@ export default function ReservationDetailClient({ reservation, lineItems, unit, 
 
   const invoiceToDisplay = issuedInvoice ? JSON.parse(issuedInvoice.snapshotJson) : null;
   const currentCalculation = issuedInvoice ? invoiceToDisplay.calculation : draftCalculation;
-  const currentLineItems = issuedInvoice ? invoiceToDisplay.input.lineItems : lineItems;
+  const currentLineItems = issuedInvoice 
+    ? invoiceToDisplay.input.lineItems.map((li: any) => ({
+        ...li,
+        amountMinorUnits: li.amountMinorUnits ?? (li.quantity * li.rateMinorUnits)
+      })) 
+    : lineItems;
   const isDraft = !issuedInvoice;
   const isFinalized = issuedInvoice?.finalizedAt != null;
 

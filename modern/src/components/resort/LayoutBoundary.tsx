@@ -14,8 +14,8 @@ export function LayoutBoundary({
 }) {
   const pathname = usePathname();
   
-  // Isolated layout for admin pages (do not render public header/footer)
-  if (pathname?.startsWith('/admin')) {
+  // Isolated layout for admin and share pages (do not render public header/footer)
+  if (pathname?.startsWith('/admin') || pathname?.startsWith('/share')) {
     return (
       <main id="main-content" tabIndex={-1} className="w-full">
         {children}

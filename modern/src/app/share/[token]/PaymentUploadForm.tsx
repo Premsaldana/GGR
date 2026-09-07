@@ -63,12 +63,15 @@ export function PaymentUploadForm({ token, hasPendingProof }: { token: string, h
       <h3 className="text-sm font-medium text-gray-800 mb-2">Upload Payment Proof</h3>
       <p className="text-xs text-gray-500 mb-4">Please upload a screenshot of your payment (JPG, PNG, PDF max 5MB).</p>
       
-      <form onSubmit={handleUpload} className="flex flex-col items-center space-y-3">
+      <form onSubmit={handleUpload} className="flex flex-col items-center space-y-3 w-full max-w-sm">
+        <label htmlFor="proof-upload" className="sr-only">Upload file</label>
         <input 
+          id="proof-upload"
+          name="file"
           type="file" 
           ref={fileInputRef} 
           accept="image/jpeg, image/png, application/pdf"
-          className="text-xs text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#233B35] file:text-white hover:file:bg-[#1a2c27] cursor-pointer"
+          className="text-xs text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#233B35] file:text-white hover:file:bg-[#1a2c27] cursor-pointer w-full"
           disabled={isUploading}
         />
         
