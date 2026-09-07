@@ -6,13 +6,16 @@ import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 import { paymentProofStorage, paymentProofProvider, generateStorageKey } from '@/lib/storage';
 
+import { uploadProofSchema } from '@/lib/validations';
+
 export async function uploadProofAction(formData: FormData) {
   try {
     const file = formData.get('file') as File;
     const token = formData.get('token') as string;
 
-    if (!file || !token) {
-      return { error: 'Missing file or token', success: false };
+    const parseResult = uploadProofSchema.safeParse({ file, token });
+    if (!parseResult.success) {
+      return { error: parseResult.error.issues[0]?.message || 'Invalid input', success: false };
     }
 
     if (file.size > 5 * 1024 * 1024) {

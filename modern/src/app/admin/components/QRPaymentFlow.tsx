@@ -99,23 +99,28 @@ export function QRPaymentFlow({ invoiceId, totalMinorUnits, advanceMinorUnits, b
             <p className="text-xs text-gray-500 mt-1">Admin must explicitly confirm the QR amount.</p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">QR Payment Amount (₹)</label>
-            <input 
-              type="number" 
-              value={amountInput} 
-              onChange={(e) => setAmountInput(e.target.value)} 
-              className="w-full px-3 py-2 border rounded"
-            />
-          </div>
+          <form onSubmit={(e) => { e.preventDefault(); handleGenerateQR(); }}>
+            <div>
+              <label className="block text-sm font-medium mb-1">QR Payment Amount (₹) <span className="text-red-500">*</span></label>
+              <input 
+                required
+                min="0"
+                step="any"
+                type="number" 
+                value={amountInput} 
+                onChange={(e) => setAmountInput(e.target.value)} 
+                className="w-full px-3 py-2 border rounded"
+              />
+            </div>
 
-          <button 
-            onClick={handleGenerateQR} 
-            disabled={loading}
-            className="w-full bg-[#233B35] text-white py-2 rounded hover:bg-opacity-90 flex justify-center items-center gap-2"
-          >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : qrArtifact ? <><RefreshCw size={16}/> Regenerate QR</> : "Generate QR"}
-          </button>
+            <button 
+              type="submit"
+              disabled={loading}
+              className="w-full mt-4 bg-[#233B35] text-white py-2 rounded hover:bg-opacity-90 flex justify-center items-center gap-2"
+            >
+              {loading ? <Loader2 size={16} className="animate-spin" /> : qrArtifact ? <><RefreshCw size={16}/> Regenerate QR</> : "Generate QR"}
+            </button>
+          </form>
 
           {qrArtifact && (
             <div className="mt-4 flex flex-col items-center p-4 border border-[#E8E1D6] rounded bg-[#FFFCF6]">

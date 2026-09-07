@@ -62,6 +62,7 @@ export function ResortFooter() {
             <li><Link href="/stay">Stay</Link></li>
             <li><Link href="/#amenities">Amenities</Link></li>
             <li><Link href="/contact">Enquire</Link></li>
+            <li><Link href="/admin/login" className="text-gray-500 hover:text-gray-700">Admin Portal</Link></li>
             {/* Legal pages — stubs: add content in Phase 4 */}
             {/* <li><Link href="/legal/privacy">Privacy Policy</Link></li> */}
             {/* <li><Link href="/legal/cancellation">Cancellation Policy</Link></li> */}

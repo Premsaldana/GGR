@@ -71,6 +71,7 @@ export function PaymentUploadForm({ token, hasPendingProof }: { token: string, h
           type="file" 
           ref={fileInputRef} 
           accept="image/jpeg, image/png, application/pdf"
+          required
           className="text-xs text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#233B35] file:text-white hover:file:bg-[#1a2c27] cursor-pointer w-full"
           disabled={isUploading}
         />

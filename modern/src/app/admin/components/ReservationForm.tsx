@@ -235,8 +235,8 @@ export default function ReservationForm({
             <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-admin-sage)] border-b pb-1">Stay Details</h4>
             
             <div>
-              <label className="block text-sm font-medium mb-1">Unit</label>
-              <select {...register("unitId")} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white">
+              <label className="block text-sm font-medium mb-1">Unit <span className="text-red-500">*</span></label>
+              <select required {...register("unitId")} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white">
                 <option value="">Select a unit...</option>
                 {units.length === 0 && <option value="" disabled>No units configured. Add an active unit before creating a reservation.</option>}
                 {units.map(u => <option key={u.id} value={u.id}>{u.displayName}</option>)}
@@ -246,25 +246,27 @@ export default function ReservationForm({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Check-in</label>
-                <input type="date" {...register("checkInDate")} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" />
+                <label className="block text-sm font-medium mb-1">Check-in <span className="text-red-500">*</span></label>
+                <input required type="date" {...register("checkInDate")} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" />
                 {errors.checkInDate && <p className="text-red-500 text-xs mt-1">{errors.checkInDate.message}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Check-out</label>
-                <input type="date" {...register("checkOutDate")} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" />
+                <label className="block text-sm font-medium mb-1">Check-out <span className="text-red-500">*</span></label>
+                <input required type="date" {...register("checkOutDate")} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" />
                 {errors.checkOutDate && <p className="text-red-500 text-xs mt-1">{errors.checkOutDate.message}</p>}
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Adults</label>
-                <input type="number" {...register("adults", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" />
+                <label className="block text-sm font-medium mb-1">Adults <span className="text-red-500">*</span></label>
+                <input required min="1" type="number" {...register("adults", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" />
+                {errors.adults && <p className="text-red-500 text-xs mt-1">{errors.adults.message}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Children</label>
-                <input type="number" {...register("children", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" />
+                <label className="block text-sm font-medium mb-1">Children <span className="text-red-500">*</span></label>
+                <input required min="0" type="number" {...register("children", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" />
+                {errors.children && <p className="text-red-500 text-xs mt-1">{errors.children.message}</p>}
               </div>
             </div>
           </div>
@@ -297,7 +299,7 @@ export default function ReservationForm({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Accommodation Rate (₹)</label>
-                <input type="number" {...register("accommodationRate", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
+                <input required min="0" type="number" {...register("accommodationRate", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
               </div>
               <div className="flex items-end pb-2">
                 <label className="flex items-center gap-2 cursor-pointer text-sm">
@@ -310,33 +312,33 @@ export default function ReservationForm({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Extra Person Qty</label>
-                <input type="number" {...register("extraPersonQuantity", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
+                <input min="0" type="number" {...register("extraPersonQuantity", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Extra Person Rate (₹)</label>
-                <input type="number" {...register("extraPersonRate", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="800" />
+                <input min="0" type="number" {...register("extraPersonRate", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="800" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Early Check-in (₹)</label>
-                <input type="number" {...register("earlyCheckIn", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
+                <input min="0" type="number" {...register("earlyCheckIn", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Late Check-out (₹)</label>
-                <input type="number" {...register("lateCheckOut", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
+                <input min="0" type="number" {...register("lateCheckOut", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Global Tax (GST %)</label>
-                <input type="number" step="0.1" {...register("taxPercentage", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
+                <input min="0" type="number" step="0.1" {...register("taxPercentage", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Security Deposit (₹)</label>
-                <input type="number" {...register("securityDeposit", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="5000" />
+                <input min="0" type="number" {...register("securityDeposit", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="5000" />
               </div>
             </div>
             

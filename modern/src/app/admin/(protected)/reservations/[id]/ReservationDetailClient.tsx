@@ -232,13 +232,24 @@ export default function ReservationDetailClient({ reservation, lineItems, unit, 
                     )}
 
                     {activeProofId === proof.id && (
-                      <div className="mt-4 bg-white p-4 border border-gray-200 rounded-md space-y-4">
+                      <form 
+                        onSubmit={(e: any) => {
+                          e.preventDefault();
+                          const action = e.nativeEvent.submitter.value;
+                          if (action === 'verify') handleVerify(proof.id);
+                          if (action === 'reject') handleReject(proof.id);
+                        }} 
+                        className="mt-4 bg-white p-4 border border-gray-200 rounded-md space-y-4"
+                      >
                         <h4 className="font-semibold text-sm border-b pb-2">Review Action</h4>
                         
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-xs font-semibold mb-1">Verify Amount (Rs)</label>
+                            <label className="block text-xs font-semibold mb-1">Verify Amount (Rs) <span className="text-red-500">*</span></label>
                             <input 
+                              required
+                              min="0"
+                              step="any"
                               type="number" 
                               value={verifyAmount} 
                               onChange={e => setVerifyAmount(Number(e.target.value))}
@@ -246,8 +257,9 @@ export default function ReservationDetailClient({ reservation, lineItems, unit, 
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-semibold mb-1">Mode</label>
+                            <label className="block text-xs font-semibold mb-1">Mode <span className="text-red-500">*</span></label>
                             <select 
+                              required
                               value={paymentMode} 
                               onChange={e => setPaymentMode(e.target.value)}
                               className="w-full border rounded p-2 text-sm"
@@ -283,12 +295,12 @@ export default function ReservationDetailClient({ reservation, lineItems, unit, 
                             <span>Request Resubmit (if Rejecting)</span>
                           </label>
                           <div className="flex space-x-2">
-                            <button onClick={() => setActiveProofId(null)} className="px-4 py-2 text-sm border rounded-md text-gray-600 hover:bg-gray-50">Cancel</button>
-                            <button onClick={() => handleReject(proof.id)} className="px-4 py-2 text-sm bg-red-600 text-white font-semibold rounded-md hover:bg-red-700">Reject</button>
-                            <button onClick={() => handleVerify(proof.id)} className="px-4 py-2 text-sm bg-green-600 text-white font-semibold rounded-md hover:bg-green-700">Verify Payment</button>
+                            <button type="button" onClick={() => setActiveProofId(null)} className="px-4 py-2 text-sm border rounded-md text-gray-600 hover:bg-gray-50">Cancel</button>
+                            <button type="submit" name="action" value="reject" className="px-4 py-2 text-sm bg-red-600 text-white font-semibold rounded-md hover:bg-red-700">Reject</button>
+                            <button type="submit" name="action" value="verify" className="px-4 py-2 text-sm bg-green-600 text-white font-semibold rounded-md hover:bg-green-700">Verify Payment</button>
                           </div>
                         </div>
-                      </div>
+                      </form>
                     )}
                   </div>
                 ))}

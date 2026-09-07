@@ -24,38 +24,9 @@ export async function getReservations(monthStart: string, monthEnd: string) {
   ).all();
 }
 
-const reservationSchema = z.object({
-  unitId: z.string().min(1, 'Unit is required'),
-  guestName: z.string().min(2, 'Guest name is required'),
-  phone: z.string().optional(),
-  email: z.string().email().optional().or(z.literal('')),
-  checkInDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format must be YYYY-MM-DD'),
-  checkOutDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format must be YYYY-MM-DD'),
-  adults: z.number().min(1),
-  children: z.number().min(0),
-  bookingStatus: z.enum(['pending', 'confirmed', 'cancelled']),
-  paymentMode: z.enum(['UPI', 'CASH', 'BANK_TRANSFER']).optional(),
-  advanceReceived: z.number().min(0).optional(),
-  advanceReceivedAt: z.string().optional(),
-  notes: z.string().optional(),
-  
-  // Pricing inputs
-  accommodationRate: z.number().min(0),
-  isNightlyRate: z.boolean(),
-  extraPersonQuantity: z.number().min(0).default(0),
-  extraPersonRate: z.number().min(0).default(800),
-  earlyCheckIn: z.number().min(0).default(0),
-  lateCheckOut: z.number().min(0).default(0),
-  securityDeposit: z.number().min(0).default(5000),
-  taxPercentage: z.number().min(0).default(0),
-  additionalServices: z.array(z.object({
-    description: z.string().min(1),
-    quantity: z.number().min(1),
-    rate: z.number().min(0),
-  })).optional()
-});
+import { reservationFormSchema } from '@/lib/validations';
 
-export async function createReservation(data: z.infer<typeof reservationSchema>) {
+export async function createReservation(data: z.infer<typeof reservationFormSchema>) {
   let session;
   try {
     session = await requireAdmin();
@@ -63,7 +34,7 @@ export async function createReservation(data: z.infer<typeof reservationSchema>)
     return { error: 'Unauthorized', type: 'UNAUTHORIZED' };
   }
 
-  const parseResult = reservationSchema.safeParse(data);
+  const parseResult = reservationFormSchema.safeParse(data);
   if (!parseResult.success) {
     return { error: 'Invalid input data', type: 'VALIDATION', details: parseResult.error.format() };
   }

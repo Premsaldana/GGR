@@ -7,6 +7,8 @@ import { eq, desc } from 'drizzle-orm';
 import crypto from 'crypto';
 import { calculateInvoice, InvoiceCalculationInput } from '@/lib/invoice';
 
+import { adminReviewProofSchema, rejectProofSchema } from '@/lib/validations';
+
 export async function verifyProofAction(
   proofId: string, 
   verifiedAmountMinorUnits: number, 
@@ -15,6 +17,18 @@ export async function verifyProofAction(
   adminNote: string
 ) {
   try {
+    const parseResult = adminReviewProofSchema.safeParse({
+      proofId,
+      verifyAmountMinorUnits: verifiedAmountMinorUnits,
+      paymentMode,
+      paymentReference,
+      adminNote
+    });
+
+    if (!parseResult.success) {
+      return { error: parseResult.error.issues[0]?.message || 'Invalid input', success: false };
+    }
+
     const session = await requireAdmin();
 
     return db.transaction((tx) => {
@@ -74,6 +88,16 @@ export async function verifyProofAction(
 
 export async function rejectProofAction(proofId: string, adminNote: string, requestResubmit: boolean = false) {
   try {
+    const parseResult = rejectProofSchema.safeParse({
+      proofId,
+      adminNote,
+      requestResubmit
+    });
+
+    if (!parseResult.success) {
+      return { error: parseResult.error.issues[0]?.message || 'Invalid input', success: false };
+    }
+
     const session = await requireAdmin();
 
     return db.transaction((tx) => {
