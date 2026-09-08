@@ -1,0 +1,4 @@
+**This for my personal use only, this has nothing to do with the antigravity agent, ignore this
+-the dashboard seems not to be working
+-make it 5bhk villa only on the admin endpoint as well
+-only gmail authetication is required, remove the second step

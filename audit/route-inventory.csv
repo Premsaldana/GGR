@@ -1,0 +1,9 @@
+Current URL,Proposed URL,Purpose,Primary CTA,SEO Priority,Content Owner,Integration,Migration Status
+/index.html,/,Property overview — hero slider; three accommodation listings; amenities grid; villa video; WhatsApp widget; contact footer,WhatsApp booking (wa.me),High,Resort owner,WhatsApp; Google Fonts,Audit
+/#accommodations,/stay,Anchor to accommodations section within index.html,View room details,High,Resort owner,None,Audit
+/#amenities1,/amenities,Anchor to amenities section within index.html,Browse amenities,Medium,Resort owner,None,Audit
+/#contact,/contact,Anchor to contact footer within index.html,Call / Email,Medium,Resort owner,None,Audit
+/test.html,/stay/1bhk (or remove),Standalone 1-BHK detail page prototype with inline CSS; shows 1BHK/4BHK/5BHK cards,View details,Low (orphan page),Developer,None,Audit
+WhatsApp booking link (wa.me/+917813093075),/enquiry or keep external,External booking/enquiry via WhatsApp pre-filled message,Start conversation,High,Resort owner,WhatsApp Business,Audit
+WhatsApp enquiry link (wa.me/+917813093075),/enquiry or keep external,External enquiry via WhatsApp pre-filled message (footer widget),Start conversation,High,Resort owner,WhatsApp Business,Audit
+tel:+917813093075,tel:+917813093075,Direct phone call from header,Call now,Medium,Resort owner,Phone (tel: protocol),Audit
