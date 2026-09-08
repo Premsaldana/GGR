@@ -35,7 +35,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
         <div className="p-4 border-t border-white/10">
           <div className="text-xs text-[var(--color-admin-sage)] mb-3 break-all">{session.email}</div>
           <form action={logout}>
-            <button type="submit" className="flex items-center gap-2 text-sm text-[var(--color-admin-terracotta)] hover:text-white transition w-full">
+            <button type="submit" className="flex items-center gap-2 text-sm text-white/75 hover:text-white transition w-full">
               <LogOut size={16} /> Sign out
             </button>
           </form>
@@ -48,7 +48,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
         <header className="md:hidden bg-[var(--color-admin-botanical)] text-[var(--color-admin-shell)] p-4 flex justify-between items-center">
           <h1 className="font-[var(--font-display)] text-lg">GGR Admin</h1>
           <form action={logout}>
-            <button type="submit" className="text-sm text-[var(--color-admin-terracotta)]">Logout</button>
+            <button type="submit" className="text-sm text-white/80 hover:text-white transition">Logout</button>
           </form>
         </header>
 

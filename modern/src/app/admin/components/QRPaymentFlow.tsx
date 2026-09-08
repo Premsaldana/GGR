@@ -116,7 +116,7 @@ export function QRPaymentFlow({ invoiceId, totalMinorUnits, advanceMinorUnits, b
             <button 
               type="submit"
               disabled={loading}
-              className="w-full mt-4 bg-[#233B35] text-white py-2 rounded hover:bg-opacity-90 flex justify-center items-center gap-2"
+              className="admin-button admin-button--dark w-full mt-4"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : qrArtifact ? <><RefreshCw size={16}/> Regenerate QR</> : "Generate QR"}
             </button>
@@ -147,7 +147,7 @@ export function QRPaymentFlow({ invoiceId, totalMinorUnits, advanceMinorUnits, b
           <button 
             onClick={handleGenerateLink}
             disabled={loading}
-            className="w-full bg-[#B75E3C] text-white py-2 rounded hover:bg-opacity-90 flex justify-center items-center gap-2"
+            className="admin-button admin-button--primary w-full"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <><LinkIcon size={16} /> Generate Share Link</>}
           </button>

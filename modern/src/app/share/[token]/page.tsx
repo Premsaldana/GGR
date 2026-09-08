@@ -8,6 +8,7 @@ import crypto from 'crypto';
 import { PaymentUploadForm } from './PaymentUploadForm';
 import { paymentProofs } from '@/db/schema';
 import { GuestRealtimeVerification } from './GuestRealtimeVerification';
+import { Button } from '@/components/ui/Button';
 
 // Ensure the page isn't indexed by search engines
 export const metadata = {
@@ -131,13 +132,9 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
               <p className="text-lg font-semibold text-[#2E7D32] mb-1">Payment Verified</p>
               <p className="text-sm text-[#388E3C] mb-6 text-center">Your payment has been received and verified by the resort.</p>
               
-              <a 
-                href={`/api/share/${token}/download`} 
-                target="_blank" 
-                className="w-full text-center py-3 px-4 bg-[#2E7D32] text-white rounded-md text-sm font-semibold hover:bg-[#1B5E20] transition-colors shadow-sm"
-              >
+              <Button as="a" href={`/api/share/${token}/download`} target="_blank" rel="noopener noreferrer" className="w-full">
                 Download Invoice (PDF)
-              </a>
+              </Button>
             </div>
           ) : qrArtifact ? (
             <div className="p-6 bg-[#FFFCF6] flex flex-col items-center border-b border-gray-100">

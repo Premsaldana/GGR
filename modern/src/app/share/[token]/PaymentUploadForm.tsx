@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { uploadProofAction } from './actions';
+import { Button } from '@/components/ui/Button';
 
 export function PaymentUploadForm({ token, hasPendingProof }: { token: string, hasPendingProof: boolean }) {
   const [isUploading, setIsUploading] = useState(false);
@@ -78,13 +79,9 @@ export function PaymentUploadForm({ token, hasPendingProof }: { token: string, h
         
         {error && <p className="text-xs text-red-600">{error}</p>}
         
-        <button 
-          type="submit" 
-          disabled={isUploading}
-          className="w-full py-2 px-4 bg-[#233B35] text-white rounded text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#1a2c27] transition-colors"
-        >
+        <Button type="submit" loading={isUploading} className="w-full">
           {isUploading ? 'Uploading...' : 'Submit Proof'}
-        </button>
+        </Button>
       </form>
     </div>
   );

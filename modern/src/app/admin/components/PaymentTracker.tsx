@@ -157,7 +157,7 @@ export function PaymentTracker({ invoiceId, totalMinorUnits, advanceMinorUnits }
               </div>
             </div>
             <div className="flex gap-2">
-              <button type="submit" disabled={loading} className="bg-[#233B35] text-white px-4 py-1.5 rounded text-sm flex items-center gap-2">
+              <button type="submit" disabled={loading} className="admin-button admin-button--dark">
                 {loading && <Loader2 size={14} className="animate-spin" />} Save Payment
               </button>
               <button type="button" onClick={() => setShowForm(false)} className="px-4 py-1.5 text-sm text-gray-600 hover:underline">Cancel</button>

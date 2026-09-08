@@ -204,8 +204,8 @@ export default function ReservationForm({
         <h3 className="font-[var(--font-display)] text-2xl font-semibold mb-2">Reservation Saved</h3>
         <p className="text-[var(--color-admin-sage)] mb-8 text-center">Reference: {createdRef}</p>
         <div className="flex flex-col gap-3 w-full max-w-xs">
-          <a href={`/admin/reservations/${createdId}`} className="bg-[#233B35] text-white px-6 py-2 rounded-md text-center hover:bg-opacity-90">View Reservation</a>
-          <a href={`/admin/reservations/${createdId}#invoice`} className="border border-[#233B35] text-[#233B35] px-6 py-2 rounded-md text-center hover:bg-[#F2EBE1]">Create/View Bill</a>
+          <a href={`/admin/reservations/${createdId}`} className="admin-button admin-button--dark w-full">View Reservation</a>
+          <a href={`/admin/reservations/${createdId}#invoice`} className="admin-button admin-button--secondary w-full">Create/View Bill</a>
           <button onClick={onSuccess} className="text-gray-500 mt-4 underline hover:text-gray-700">Return to Calendar</button>
         </div>
       </div>

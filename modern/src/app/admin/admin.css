@@ -11,3 +11,26 @@
   --color-admin-mist: #E8E1D6;
   --color-admin-danger: #B8463D;
 }
+
+.admin-button {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  border: 1px solid transparent;
+  border-radius: .5rem;
+  padding: .7rem 1rem;
+  font-size: .8125rem;
+  font-weight: 650;
+  line-height: 1.2;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+}
+.admin-button:focus-visible { outline: 3px solid var(--color-admin-brass); outline-offset: 2px; }
+.admin-button:disabled { cursor: not-allowed; opacity: .55; }
+.admin-button--primary { color: #fff; background: var(--color-admin-terracotta); border-color: var(--color-admin-terracotta); box-shadow: 0 1px 2px rgb(29 36 34 / 12%); }
+.admin-button--primary:hover:not(:disabled) { background: #97482e; border-color: #97482e; }
+.admin-button--dark { color: #fff; background: var(--color-admin-botanical); border-color: var(--color-admin-botanical); }
+.admin-button--dark:hover:not(:disabled) { background: var(--color-admin-ink); border-color: var(--color-admin-ink); }
+.admin-button--secondary { color: var(--color-admin-botanical); background: var(--color-admin-shell); border-color: var(--color-admin-botanical); }
+.admin-button--secondary:hover:not(:disabled) { color: var(--color-admin-ink); background: var(--color-admin-mineral); }

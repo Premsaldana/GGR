@@ -163,12 +163,12 @@ export function InvoicePreview({ invoiceId, reservation, calculation, lineItems,
           <a 
             href={`/api/invoice-pdf/${invoiceId}`} 
             download 
-            className="bg-[#233B35] text-white px-4 py-2 rounded hover:bg-opacity-90 inline-block"
+            className="admin-button admin-button--dark inline-flex"
           >
             Download PDF
           </a>
         ) : (
-          <button disabled className="bg-gray-300 text-gray-700 px-4 py-2 cursor-not-allowed">Download PDF (Draft)</button>
+          <button disabled className="admin-button bg-gray-200 text-gray-500 cursor-not-allowed">Download PDF (Draft)</button>
         )}
       </div>
 
