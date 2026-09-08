@@ -36,7 +36,16 @@ export default function ReservationDetailClient({ reservation, lineItems, unit, 
 
   useProofRealtime(issuedInvoice?.id, {
     onState: (message) => {
-      if (message.state.proofs) setLiveProofs(message.state.proofs as any[]);
+      if (message.type === 'proof.state' && message.state.proofs) {
+        setLiveProofs(message.state.proofs as any[]);
+      } else if (message.type === 'proof.event' && message.event.proof) {
+        const incomingProof = message.event.proof as any;
+        setLiveProofs((current) => {
+          const existingIndex = current.findIndex((proof) => proof.id === incomingProof.id);
+          if (existingIndex === -1) return [incomingProof, ...current];
+          return current.map((proof, index) => index === existingIndex ? { ...proof, ...incomingProof } : proof);
+        });
+      }
     },
   });
 
@@ -62,7 +71,6 @@ export default function ReservationDetailClient({ reservation, lineItems, unit, 
     if (res.error) setError(res.error);
     else {
       setActiveProofId(null);
-      router.refresh();
     }
   };
 
@@ -72,7 +80,6 @@ export default function ReservationDetailClient({ reservation, lineItems, unit, 
     if (res.error) setError(res.error);
     else {
       setActiveProofId(null);
-      router.refresh();
     }
   };
 

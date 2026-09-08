@@ -16,6 +16,7 @@ const db = new Database(path.resolve(process.cwd(), dbUrl), { readonly: true });
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 const wss = new WebSocketServer({ noServer: true });
+const subscribers = new Map();
 
 function safeEqual(left, right) {
   const a = Buffer.from(left);
@@ -46,29 +47,79 @@ function getState(invoiceId, role) {
     FROM payment_proofs WHERE invoice_id = ? ORDER BY submitted_at DESC
   `).all(invoiceId);
   const latest = db.prepare(`SELECT finalized_at AS finalizedAt, balance_minor_units AS balanceMinorUnits FROM invoices WHERE id = ?`).get(invoiceId);
-  const fingerprint = JSON.stringify({ proofs, latest });
   return role === 'guest'
-    ? { fingerprint, isVerified: Boolean(latest && (latest.finalizedAt || latest.balanceMinorUnits <= 0) || proofs.some((proof) => proof.status === 'verified')), latestStatus: proofs[0]?.status || null }
-    : { fingerprint, proofs, latest };
+    ? { isVerified: Boolean(latest && (latest.finalizedAt || latest.balanceMinorUnits <= 0) || proofs.some((proof) => proof.status === 'verified')), latestStatus: proofs[0]?.status || null }
+    : { proofs, latest };
+}
+
+function sendState(socket, auth) {
+  if (socket.readyState !== socket.OPEN) return;
+  socket.send(JSON.stringify({ type: 'proof.state', invoiceId: auth.invoiceId, state: getState(auth.invoiceId, auth.role) }));
+}
+
+function broadcast(event) {
+  const clients = subscribers.get(event.invoiceId) || new Set();
+  for (const subscriber of clients) {
+    if (subscriber.socket.readyState !== subscriber.socket.OPEN) continue;
+    const guestEvent = {
+      type: event.type,
+      invoiceId: event.invoiceId,
+      reservationId: event.reservationId,
+      proof: event.proof ? { id: event.proof.id, invoiceId: event.proof.invoiceId, status: event.proof.status, submittedAt: event.proof.submittedAt, reviewedAt: event.proof.reviewedAt, verifiedAmountMinorUnits: event.proof.verifiedAmountMinorUnits } : undefined,
+      invoice: event.invoice ? { id: event.invoice.id, status: event.invoice.status, balanceMinorUnits: event.invoice.balanceMinorUnits, finalizedAt: event.invoice.finalizedAt } : undefined,
+    };
+    subscriber.socket.send(JSON.stringify({ type: 'proof.event', invoiceId: event.invoiceId, event: subscriber.auth.role === 'guest' ? guestEvent : event }));
+  }
 }
 
 wss.on('connection', (socket, request, auth) => {
-  let lastFingerprint = '';
-  const sendState = () => {
-    if (socket.readyState !== socket.OPEN) return;
-    const state = getState(auth.invoiceId, auth.role);
-    if (state.fingerprint === lastFingerprint) return;
-    lastFingerprint = state.fingerprint;
-    socket.send(JSON.stringify({ type: 'proof.state', invoiceId: auth.invoiceId, state }));
+  const clients = subscribers.get(auth.invoiceId) || new Set();
+  const subscriber = { socket, auth };
+  clients.add(subscriber);
+  subscribers.set(auth.invoiceId, clients);
+  sendState(socket, auth);
+  const cleanup = () => {
+    clients.delete(subscriber);
+    if (clients.size === 0) subscribers.delete(auth.invoiceId);
   };
-  sendState();
-  const interval = setInterval(sendState, 1000);
-  socket.on('close', () => clearInterval(interval));
-  socket.on('error', () => clearInterval(interval));
+  socket.on('close', cleanup);
+  socket.on('error', cleanup);
 });
 
+function readBody(request) {
+  return new Promise((resolve, reject) => {
+    let body = '';
+    request.setEncoding('utf8');
+    request.on('data', (chunk) => { body += chunk; if (body.length > 1024 * 1024) reject(new Error('Payload too large')); });
+    request.on('end', () => resolve(body));
+    request.on('error', reject);
+  });
+}
+
 await app.prepare();
-const server = http.createServer((request, response) => handle(request, response));
+const server = http.createServer(async (request, response) => {
+  const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
+  if (url.pathname === '/api/realtime/publish' && request.method === 'POST') {
+    if (!safeEqual(String(request.headers['x-realtime-secret'] || ''), sessionSecret)) {
+      response.writeHead(401, { 'content-type': 'application/json' });
+      response.end(JSON.stringify({ error: 'Unauthorized' }));
+      return;
+    }
+    try {
+      const event = JSON.parse(await readBody(request));
+      if (!event.invoiceId || !event.reservationId || !event.type) throw new Error('Invalid event');
+      broadcast(event);
+      response.writeHead(202, { 'content-type': 'application/json' });
+      response.end(JSON.stringify({ accepted: true }));
+    } catch (error) {
+      response.writeHead(400, { 'content-type': 'application/json' });
+      response.end(JSON.stringify({ error: error.message || 'Invalid event' }));
+    }
+    return;
+  }
+  handle(request, response);
+});
+
 server.on('upgrade', (request, socket, head) => {
   const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
   if (url.pathname !== '/api/realtime') {

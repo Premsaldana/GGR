@@ -223,6 +223,7 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
 import { calculateInvoice, InvoiceCalculationInput } from '@/lib/invoice';
 import { invoices } from '@/db/schema';
 import { getInvoiceStayMetadata } from '@/lib/invoiceMetadata';
+import { publishRealtimeEvent } from '@/lib/realtime-publish';
 
 export async function calculateInvoiceAction(input: InvoiceCalculationInput) {
   await requireAdmin();
@@ -313,6 +314,12 @@ export async function issueInvoiceAction(reservationId: string, clientDepositMin
       }).run();
 
       return { invoiceId, invoiceNumber, version: newVersion };
+    });
+    await publishRealtimeEvent({
+      type: 'invoice.issued',
+      invoiceId: result.invoiceId,
+      reservationId,
+      invoice: { id: result.invoiceId, invoiceNumber: result.invoiceNumber, status: 'issued' },
     });
     return { success: true, ...result };
   } catch (err: any) {

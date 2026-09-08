@@ -7,7 +7,10 @@ export function GuestRealtimeVerification({ token, invoiceId }: { token: string;
   const [verified, setVerified] = useState(false);
   useProofRealtime(invoiceId, {
     shareToken: token,
-    onState: (message) => setVerified(Boolean(message.state.isVerified)),
+    onState: (message) => {
+      if (message.type === 'proof.state') setVerified(Boolean(message.state.isVerified));
+      if (message.type === 'proof.event' && (message.event.type === 'proof.verified' || message.event.type === 'invoice.finalized')) setVerified(true);
+    },
   });
 
   if (!verified) return null;

@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import { paymentProofStorage, paymentProofProvider, generateStorageKey } from '@/lib/storage';
 
 import { uploadProofSchema } from '@/lib/validations';
+import { publishRealtimeEvent } from '@/lib/realtime-publish';
 
 export async function uploadProofAction(formData: FormData) {
   try {
@@ -86,8 +87,9 @@ export async function uploadProofAction(formData: FormData) {
     // Perform storage and DB insert
     await paymentProofStorage.put(storageKey, buffer, detectedMime);
 
+    const proofId = crypto.randomUUID();
     db.insert(paymentProofs).values({
-      id: crypto.randomUUID(),
+      id: proofId,
       invoiceId: invoice.id,
       shareLinkId: shareLink.id,
       storageProvider: paymentProofProvider,
@@ -99,6 +101,14 @@ export async function uploadProofAction(formData: FormData) {
       createdAt: new Date(),
       updatedAt: new Date()
     }).run();
+
+    const proof = db.select().from(paymentProofs).where(eq(paymentProofs.id, proofId)).get();
+    await publishRealtimeEvent({
+      type: 'proof.submitted',
+      invoiceId: invoice.id,
+      reservationId: reservation.id,
+      proof: proof ? { ...proof } : undefined,
+    });
 
     return { success: true };
   } catch (err: any) {

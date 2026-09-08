@@ -2,16 +2,18 @@
 
 import { useEffect, useRef } from 'react';
 
-type ProofRealtimeMessage = {
-  type: 'proof.state';
+type ProofRealtimeEvent = {
+  type: 'proof.submitted' | 'proof.verified' | 'proof.rejected' | 'proof.resubmit_requested' | 'invoice.issued' | 'invoice.finalized';
   invoiceId: string;
-  state: {
-    fingerprint: string;
-    proofs?: unknown[];
-    isVerified?: boolean;
-    latestStatus?: string | null;
-  };
+  reservationId: string;
+  proof?: Record<string, unknown>;
+  invoice?: Record<string, unknown>;
+  reservation?: Record<string, unknown>;
 };
+
+type ProofRealtimeMessage =
+  | { type: 'proof.state'; invoiceId: string; state: { proofs?: unknown[]; isVerified?: boolean; latestStatus?: string | null } }
+  | { type: 'proof.event'; invoiceId: string; event: ProofRealtimeEvent };
 
 export function useProofRealtime(
   invoiceId: string | undefined,
@@ -61,4 +63,4 @@ export function useProofRealtime(
   }, [invoiceId, options.shareToken]);
 }
 
-export type { ProofRealtimeMessage };
+export type { ProofRealtimeEvent, ProofRealtimeMessage };
