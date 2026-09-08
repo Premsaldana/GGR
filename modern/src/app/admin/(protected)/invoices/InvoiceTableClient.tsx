@@ -82,7 +82,11 @@ export default function InvoiceTableClient({ rows }: { rows: InvoiceRow[] }) {
               <tr key={row.invoice.id} className="border-b last:border-b-0 hover:bg-gray-50 transition">
                 <td className="px-6 py-4 font-medium text-gray-900">{row.invoice.invoiceNumber}</td>
                 <td className="px-6 py-4">{row.guest.fullName}</td>
-                <td className="px-6 py-4 text-xs"><span className="bg-gray-100 px-2 py-1 rounded border">{row.unit.displayName}</span></td>
+                <td className="px-6 py-4 text-xs align-top">
+                  <span className="inline-flex max-w-[180px] whitespace-normal break-words leading-5 bg-gray-100 px-2 py-1 rounded border">
+                    {row.unit.displayName}
+                  </span>
+                </td>
                 <td className="px-6 py-4 text-xs whitespace-nowrap">{row.reservation.checkInDate}<br />to {row.reservation.checkOutDate}</td>
                 <td className="px-6 py-4 font-semibold text-[#B75E3C]">₹{(row.invoice.totalMinorUnits / 100).toFixed(2)}</td>
                 <td className="px-6 py-4 font-semibold">₹{(row.invoice.balanceMinorUnits / 100).toFixed(2)}</td>
@@ -102,4 +106,3 @@ export default function InvoiceTableClient({ rows }: { rows: InvoiceRow[] }) {
 }
 
 export type { InvoiceRow };
-
