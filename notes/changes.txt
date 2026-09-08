@@ -1,8 +1,4 @@
 **This for my personal use only, this has nothing to do with the antigravity agent, ignore this
--all calculations must happen in ruppee right now its happeniong in paise, fix it
--on admin payment proof approval the guest must recieve the invoice too on the shared link webpage which must be downloadable
--add form validation on the frontend and backend for all forms
 -the dashboard seems not to be working
--make it 5bhk villa only
--add a admin button on the landing page
+-make it 5bhk villa only on the admin endpoint as well
 -only gmail authetication is required, remove the second step

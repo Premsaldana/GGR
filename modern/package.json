@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "tsx src/__tests__/test-calendar.ts",
+    "test:dashboard": "tsx src/__tests__/test-dashboard.ts",
+    "test:invoices": "tsx src/__tests__/test-invoice-workspace.ts",
     "seed": "tsx src/db/seed.ts"
   },
   "dependencies": {

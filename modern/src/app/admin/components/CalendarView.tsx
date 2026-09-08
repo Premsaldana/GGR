@@ -9,24 +9,27 @@ import Link from 'next/link';
 import ReservationForm from './ReservationForm';
 import { getUnits, getReservations } from '../(protected)/calendar/actions';
 
+type AdminUnit = Awaited<ReturnType<typeof getUnits>>[number];
+type CalendarReservation = Awaited<ReturnType<typeof getReservations>>[number];
+
 export default function CalendarView() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   
-  const [units, setUnits] = useState<{id: string, displayName: string}[]>([]);
-  const [reservations, setReservations] = useState<any[]>([]);
+  const [units, setUnits] = useState<AdminUnit[]>([]);
+  const [reservations, setReservations] = useState<CalendarReservation[]>([]);
   const [loading, setLoading] = useState(true);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
+  const startStr = format(monthStart, 'yyyy-MM-dd');
+  const endStr = format(monthEnd, 'yyyy-MM-dd');
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      const startStr = format(monthStart, 'yyyy-MM-dd');
-      const endStr = format(monthEnd, 'yyyy-MM-dd');
-      
       const [fetchedUnits, fetchedReservations] = await Promise.all([
         getUnits(),
         getReservations(startStr, endStr)
@@ -40,8 +43,25 @@ export default function CalendarView() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [currentDate]);
+    let cancelled = false;
+
+    Promise.all([getUnits(), getReservations(startStr, endStr)])
+      .then(([fetchedUnits, fetchedReservations]) => {
+        if (cancelled) return;
+        setUnits(fetchedUnits);
+        setReservations(fetchedReservations);
+      })
+      .catch((error: unknown) => {
+        console.error(error);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [endStr, startStr]);
 
   // Derive occupied dates sets for easy lookup
   const getOccupiedDetails = (dateStr: string) => {
@@ -68,10 +88,10 @@ export default function CalendarView() {
           {loading && <Loader2 size={16} className="animate-spin text-[var(--color-admin-sage)]" />}
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setCurrentDate(subMonths(currentDate, 1))} className="p-2 rounded-md hover:bg-[var(--color-admin-mist)] transition">
+          <button onClick={() => { setLoading(true); setCurrentDate(subMonths(currentDate, 1)); }} className="p-2 rounded-md hover:bg-[var(--color-admin-mist)] transition">
             <ChevronLeft size={20} />
           </button>
-          <button onClick={() => setCurrentDate(addMonths(currentDate, 1))} className="p-2 rounded-md hover:bg-[var(--color-admin-mist)] transition">
+          <button onClick={() => { setLoading(true); setCurrentDate(addMonths(currentDate, 1)); }} className="p-2 rounded-md hover:bg-[var(--color-admin-mist)] transition">
             <ChevronRight size={20} />
           </button>
         </div>
@@ -130,7 +150,7 @@ export default function CalendarView() {
       {selectedDate && (
         <ReservationForm 
           checkInDate={selectedDate} 
-          units={units}
+          units={units.filter((unit) => unit.bookable)}
           onClose={() => setSelectedDate(null)}
           onSuccess={handleSuccess}
         />

@@ -7,15 +7,32 @@ import { and, eq, lte, gte, or } from 'drizzle-orm';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { toPaise } from '@/lib/invoice';
+import { hasResortBookingConflict, isBookableResortUnitSlug } from '@/lib/resort-inventory';
 
 export async function getUnits() {
   await requireAdmin();
-  return db.select().from(units).where(eq(units.active, true)).all();
+  const rows = db.select({
+    id: units.id,
+    displayName: units.displayName,
+    slug: units.slug,
+    active: units.active,
+  }).from(units).all();
+
+  return rows.map((unit) => ({
+    ...unit,
+    bookable: unit.active === true && isBookableResortUnitSlug(unit.slug),
+  }));
 }
 
 export async function getReservations(monthStart: string, monthEnd: string) {
   await requireAdmin();
-  return db.select().from(reservations).where(
+  return db.select({
+    id: reservations.id,
+    unitId: reservations.unitId,
+    checkInDate: reservations.checkInDate,
+    checkOutDate: reservations.checkOutDate,
+    bookingStatus: reservations.bookingStatus,
+  }).from(reservations).where(
     and(
       lte(reservations.checkInDate, monthEnd),
       gte(reservations.checkOutDate, monthStart),
@@ -30,7 +47,7 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
   let session;
   try {
     session = await requireAdmin();
-  } catch (error: any) {
+  } catch {
     return { error: 'Unauthorized', type: 'UNAUTHORIZED' };
   }
 
@@ -47,24 +64,27 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
   try {
     // Synchronous transaction to prevent locking/concurrency issues
     const result = db.transaction((tx) => {
-      const unit = tx.select().from(units).where(and(eq(units.id, validData.unitId), eq(units.active, true))).get();
-      if (!unit) {
+      const unit = tx.select().from(units).where(eq(units.id, validData.unitId)).get();
+      if (!unit || unit.active !== true || !isBookableResortUnitSlug(unit.slug)) {
         throw new Error('INVALID_UNIT');
       }
 
-      const overlapping = tx.select().from(reservations).where(
+      const possibleOverlaps = tx.select({
+        checkInDate: reservations.checkInDate,
+        checkOutDate: reservations.checkOutDate,
+        bookingStatus: reservations.bookingStatus,
+      }).from(reservations).where(
         and(
-          eq(reservations.unitId, validData.unitId),
           or(eq(reservations.bookingStatus, 'pending'), eq(reservations.bookingStatus, 'confirmed')),
           lte(reservations.checkInDate, validData.checkOutDate),
           gte(reservations.checkOutDate, validData.checkInDate)
         )
-      ).get();
+      ).all();
 
-      if (overlapping) {
-        if (!(overlapping.checkOutDate <= validData.checkInDate || overlapping.checkInDate >= validData.checkOutDate)) {
-          throw new Error('CONFLICT');
-        }
+      // The new product is the entire resort, so a live reservation for any
+      // legacy unit blocks those dates until that historical stay is complete.
+      if (hasResortBookingConflict(possibleOverlaps, validData.checkInDate, validData.checkOutDate)) {
+        throw new Error('CONFLICT');
       }
 
       const guestId = crypto.randomUUID();
@@ -207,10 +227,10 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
   } catch (err: unknown) {
     const error = err as Error;
     if (error.message === 'INVALID_UNIT') {
-      return { error: 'The selected unit is invalid or inactive.', type: 'VALIDATION' };
+      return { error: 'New reservations can only be created for the entire 5-bedroom private resort.', type: 'VALIDATION' };
     }
     if (error.message === 'CONFLICT') {
-      return { error: 'The selected unit is already booked for these dates.', type: 'CONFLICT' };
+      return { error: 'The resort is already reserved for some or all of these dates.', type: 'CONFLICT' };
     }
     console.error('Reservation creation failed', error);
     return { error: 'Failed to create reservation', type: 'SERVER_ERROR' };
@@ -224,8 +244,11 @@ export async function calculateInvoiceAction(input: InvoiceCalculationInput) {
   await requireAdmin();
   try {
     return { success: true, data: calculateInvoice(input) };
-  } catch (err: any) {
-    return { error: err.message, type: 'VALIDATION_ERROR' };
+  } catch (error: unknown) {
+    return {
+      error: error instanceof Error ? error.message : 'Unable to calculate invoice',
+      type: 'VALIDATION_ERROR',
+    };
   }
 }
 
@@ -308,9 +331,8 @@ export async function issueInvoiceAction(reservationId: string, clientDepositMin
       return { invoiceId, invoiceNumber, version: newVersion };
     });
     return { success: true, ...result };
-  } catch (err: any) {
-    console.error('Invoice issuance failed with error:', err.message || 'Unknown error');
+  } catch (error: unknown) {
+    console.error('Invoice issuance failed with error:', error instanceof Error ? error.message : 'Unknown error');
     return { error: 'Failed to issue invoice. Please verify your permissions and try again.', type: 'SERVER_ERROR' };
   }
 }
-
