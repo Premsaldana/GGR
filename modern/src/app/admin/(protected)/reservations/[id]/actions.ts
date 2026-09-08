@@ -2,10 +2,10 @@
 
 import { requireAdmin } from '@/lib/session';
 import { db } from '@/db';
-import { reservations, paymentProofs, auditEvents, invoices, guests, reservationLineItems } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { reservations, paymentProofs, invoicePayments, auditEvents, invoices, reservationLineItems } from '@/db/schema';
+import { eq, desc, sum } from 'drizzle-orm';
 import crypto from 'crypto';
-import { calculateInvoice, InvoiceCalculationInput } from '@/lib/invoice';
+import { calculateInvoice } from '@/lib/invoice';
 
 import { adminReviewProofSchema, rejectProofSchema } from '@/lib/validations';
 
@@ -56,11 +56,31 @@ export async function verifyProofAction(
         updatedAt: new Date(),
       }).where(eq(paymentProofs.id, proofId)).run();
 
-      // Determine new payment status for reservation
-      // Normally, advanceReceivedMinorUnits + verified payments = total paid
-      // But for this slice, we will just compare verifiedAmount to invoice.balanceMinorUnits
-      // If they paid the balance, it's paid. If they paid less, it's partially_paid.
-      const newPaymentStatus = verifiedAmountMinorUnits >= invoice.balanceMinorUnits ? 'paid' : 'partially_paid';
+      // A verified proof is a payment ledger entry. Recompute from the invoice's
+      // advance plus every completed payment so repeated proofs and partial
+      // payments cannot leave the reservation or invoice in a stale state.
+      tx.insert(invoicePayments).values({
+        id: crypto.randomUUID(),
+        invoiceId: invoice.id,
+        amountMinorUnits: verifiedAmountMinorUnits,
+        paymentMode,
+        paymentStatus: 'completed',
+        receivedAt: new Date(),
+        reference: paymentReference || null,
+        notes: adminNote || null,
+        recordedBy: session.userId,
+        createdAt: new Date(),
+      }).run();
+
+      const paymentTotals = tx.select({ total: sum(invoicePayments.amountMinorUnits) })
+        .from(invoicePayments)
+        .where(eq(invoicePayments.invoiceId, invoice.id))
+        .get();
+      const totalPaid = (invoice.advanceMinorUnits ?? 0) + Number(paymentTotals?.total ?? 0);
+      const balanceMinorUnits = Math.max(0, invoice.totalMinorUnits - totalPaid);
+      const newPaymentStatus = totalPaid >= invoice.totalMinorUnits ? 'paid' : totalPaid > 0 ? 'partially_paid' : 'not_requested';
+
+      tx.update(invoices).set({ balanceMinorUnits }).where(eq(invoices.id, invoice.id)).run();
 
       tx.update(reservations).set({
         paymentStatus: newPaymentStatus,
@@ -74,7 +94,7 @@ export async function verifyProofAction(
         entityType: 'payment_proof',
         entityId: proofId,
         eventType: 'VERIFY_PROOF',
-        afterJson: JSON.stringify({ verifiedAmountMinorUnits, paymentMode, paymentReference, newPaymentStatus }),
+        afterJson: JSON.stringify({ verifiedAmountMinorUnits, totalPaid, balanceMinorUnits, paymentMode, paymentReference, newPaymentStatus }),
         createdAt: new Date(),
       }).run();
 
