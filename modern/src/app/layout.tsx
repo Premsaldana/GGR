@@ -7,6 +7,8 @@ import { LayoutBoundary } from "@/components/resort/LayoutBoundary";
 import { siteConfig } from "@/content/site";
 import "./globals.css";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
 /**
  * Font setup — Cormorant Garamond (display serif) + Inter (neutral sans)
  * Loaded via next/font: zero layout shift, self-hosted, no render-blocking.
@@ -28,28 +30,30 @@ const inter = Inter({
 });
 
 /**
- * Default metadata — overridden per-page via generateMetadata().
- * [OWNER APPROVAL NEEDED]: canonical URL (NEXT_PUBLIC_SITE_URL env var)
+ * Default metadata — overridden per-page when needed.
  */
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
-    default: "South Goa Garden Villa — Private Villas in Colva, South Goa",
-    template: "%s | South Goa Garden Villa",
+    default: "Goa Garden Resort — Private 5-Bedroom Resort in Colva",
+    template: "%s | Goa Garden Resort",
   },
   description:
-    "South Goa Garden Villa offers three private villa options in Colva, Goa — a 1-bedroom, 4-bedroom, and 5-bedroom villa with private pool. Ideal for families and groups.",
-  keywords: ["goa villa", "south goa accommodation", "colva villa", "private pool villa goa", "south goa garden villa"],
+    "An entire gated five-bedroom resort in Colva, South Goa, with a private pool, tropical garden, and space for up to 20 guests.",
+  keywords: ["private resort goa", "5 bedroom villa goa", "private pool villa colva", "group stay south goa", "goa garden resort"],
   authors: [{ name: siteConfig.propertyName }],
   openGraph: {
     type: "website",
     siteName: siteConfig.propertyName,
-    title: "South Goa Garden Villa — Private Villas in Colva, South Goa",
+    title: "Goa Garden Resort — Your Private Resort in Colva",
     description:
-      "Three private villa options in Colva, Goa. 1-bedroom to 5-bedroom with private pool. Enquire today.",
+      "Take over an entire five-bedroom resort in Colva, South Goa, with a private pool and tropical garden.",
+    images: [{ url: "/resort/hero-pool-night.webp", width: 2400, height: 1500, alt: "Goa Garden Resort private pool at night" }],
     locale: "en_IN",
   },
   twitter: {
     card: "summary_large_image",
+    images: ["/resort/hero-pool-night.webp"],
   },
   robots: {
     index: true,

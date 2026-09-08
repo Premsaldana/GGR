@@ -35,7 +35,7 @@ export function BookingCTA({ roomSlug, roomName, variant = "detail" }: BookingCT
 
   const whatsappMessage = roomName
     ? `Hello! I would like to enquire about the ${roomName}.`
-    : "Hello! I would like to enquire about a villa.";
+    : "Hello! I would like to enquire about a private stay at Goa Garden Resort.";
   const whatsappUrl = `https://wa.me/${siteConfig.whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
 
   async function handleBookingClick(e: React.MouseEvent<HTMLAnchorElement>) {
@@ -73,7 +73,7 @@ export function BookingCTA({ roomSlug, roomName, variant = "detail" }: BookingCT
         target="_blank"
         rel="noopener noreferrer"
         className="booking-cta__whatsapp"
-        aria-label="Chat on WhatsApp to enquire about this villa"
+        aria-label="Chat on WhatsApp to enquire about Goa Garden Resort"
       >
         {/* WhatsApp icon SVG — inline for zero dependency */}
         <svg

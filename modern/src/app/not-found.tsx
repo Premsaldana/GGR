@@ -45,11 +45,11 @@ export default function NotFound() {
         Page not found
       </h1>
       <p style={{ color: "var(--color-text-body)", marginBottom: "var(--space-8)" }}>
-        This page does not exist. Browse our villas or get in touch.
+        This page does not exist. Return to the resort or get in touch.
       </p>
       <div style={{ display: "flex", gap: "var(--space-4)", flexWrap: "wrap", justifyContent: "center" }}>
-        <Link href="/stay" className="btn btn-primary btn-md">
-          Browse villas
+        <Link href="/" className="btn btn-primary btn-md">
+          Explore the resort
         </Link>
         <Link href="/contact" className="btn btn-secondary btn-md">
           Enquire

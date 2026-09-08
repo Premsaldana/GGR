@@ -1,5 +1,5 @@
 /**
- * Site identity — South Goa Garden Villa
+ * Site identity — Goa Garden Resort
  * ─────────────────────────────────────────
  * All values confirmed from legacy index.html.
  * No invented or unverified information.
@@ -9,10 +9,10 @@ import type { SiteConfig } from "@/types/content";
 
 export const siteConfig: SiteConfig = {
   // Confirmed: index.html line 15
-  propertyName: "South Goa Garden Villa",
+  propertyName: "Goa Garden Resort",
 
   // [OWNER APPROVAL NEEDED]: no tagline in legacy site — placeholder used
-  tagline: "Private villas in Colva, South Goa",
+  tagline: "Your private five-bedroom resort in Colva, South Goa",
 
   // Confirmed: index.html line 18
   phone: "+91 7813093075",
