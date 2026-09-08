@@ -1,97 +1,44 @@
 import Link from 'next/link';
 import { db } from '@/db';
-import { guests, invoices, reservations, units } from '@/db/schema';
-import { desc, eq } from 'drizzle-orm';
-import { getDashboardReservationCounts, getTodayInResortTimeZone } from '@/lib/dashboard';
+import { getCanonicalRoomType } from '@/lib/units';
+import { getDashboardMetrics } from '@/lib/dashboard';
+import { DashboardCharts } from './DashboardCharts';
 
-type Activity = {
-  id: string;
-  label: string;
-  detail: string;
-  timestamp: Date;
-};
+const money = (minorUnits: number) => `₹${(minorUnits / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+const dateLabel = (value: Date) => value.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+function MetricCard({ label, value, detail, tone = 'default' }: { label: string; value: string | number; detail?: string; tone?: 'default' | 'good' | 'warning' | 'danger' }) {
+  const toneClass = tone === 'good' ? 'text-[#2E7D32]' : tone === 'warning' ? 'text-[var(--color-admin-brass)]' : tone === 'danger' ? 'text-[var(--color-admin-danger)]' : 'text-[var(--color-admin-forest)]';
+  return <div className="bg-white border border-[var(--color-admin-mist)] rounded-xl p-5 shadow-sm min-h-[124px]"><p className="text-[11px] font-semibold text-[var(--color-admin-sage)] uppercase tracking-wider">{label}</p><p className={`text-2xl font-[var(--font-display)] font-semibold mt-3 ${toneClass}`}>{value}</p>{detail && <p className="text-xs text-[var(--color-admin-sage)] mt-1">{detail}</p>}</div>;
+}
 
 export default function DashboardPage() {
-  const today = getTodayInResortTimeZone();
-  const { arrivingToday, departingToday, inHouseToday } = getDashboardReservationCounts(db, today);
-  const recentReservations = db.select({
-    reservation: reservations,
-    guest: guests,
-    unit: units,
-  })
-    .from(reservations)
-    .innerJoin(guests, eq(reservations.guestId, guests.id))
-    .innerJoin(units, eq(reservations.unitId, units.id))
-    .orderBy(desc(reservations.updatedAt))
-    .limit(6)
-    .all();
-  const recentInvoices = db.select({ invoice: invoices })
-    .from(invoices)
-    .orderBy(desc(invoices.createdAt))
-    .limit(6)
-    .all();
-
-  const activities: Activity[] = [
-    ...recentReservations.map(({ reservation, guest, unit }) => ({
-      id: `reservation-${reservation.id}`,
-      label: `Reservation ${reservation.reservationNumber}`,
-      detail: `${guest.fullName} · ${unit.displayName} · ${reservation.bookingStatus}`,
-      timestamp: reservation.updatedAt,
-    })),
-    ...recentInvoices.map(({ invoice }) => ({
-      id: `invoice-${invoice.id}`,
-      label: `Invoice ${invoice.invoiceNumber}`,
-      detail: `${invoice.status} · ₹${(invoice.totalMinorUnits / 100).toFixed(2)}`,
-      timestamp: invoice.createdAt,
-    })),
+  const metrics = getDashboardMetrics(db);
+  const { financial, operations } = metrics;
+  const activities = [
+    ...metrics.recentReservations.map(({ reservation, guest, unit }) => ({ id: `reservation-${reservation.id}`, label: `Reservation ${reservation.reservationNumber}`, detail: `${guest.fullName} · ${getCanonicalRoomType(unit) || unit.displayName} · ${reservation.bookingStatus}`, timestamp: reservation.updatedAt })),
+    ...metrics.recentInvoices.map((invoice) => ({ id: `invoice-${invoice.id}`, label: `Invoice ${invoice.invoiceNumber}`, detail: `${invoice.status} · ${money(invoice.totalMinorUnits)}`, timestamp: invoice.createdAt })),
   ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 8);
+  const growthDetail = financial.revenueGrowthPercent === null ? 'No prior-month collected revenue to compare' : `${financial.revenueGrowthPercent >= 0 ? '+' : ''}${financial.revenueGrowthPercent.toFixed(1)}% vs previous month`;
 
   return (
-    <div className="space-y-6">
-      <header className="mb-8">
-        <h2 className="text-2xl font-[var(--font-display)] font-semibold mb-2">Overview</h2>
-        <p className="text-[var(--color-admin-sage)] text-sm">Today&apos;s snapshot at Goa Garden Resort</p>
+    <div className="space-y-8">
+      <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+        <div><p className="text-xs font-semibold text-[var(--color-admin-terracotta)] uppercase tracking-widest">Resort command center</p><h2 className="text-3xl font-[var(--font-display)] font-semibold mt-2">Good morning, Goa Garden</h2><p className="text-[var(--color-admin-sage)] text-sm mt-2">Live operating and financial snapshot for {metrics.today}.</p></div>
+        <Link href="/admin/calendar" className="inline-flex justify-center bg-[var(--color-admin-botanical)] text-white px-4 py-2 rounded-md text-sm font-medium hover:opacity-90">Create reservation</Link>
       </header>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-[var(--color-admin-shell)] border border-[var(--color-admin-mist)] rounded-xl p-5 shadow-sm">
-          <h3 className="text-xs font-semibold text-[var(--color-admin-sage)] uppercase tracking-wider mb-2">In-House Guests</h3>
-          <p className="text-3xl font-[var(--font-display)]">{inHouseToday}</p>
-        </div>
-        <div className="bg-[var(--color-admin-shell)] border border-[var(--color-admin-mist)] rounded-xl p-5 shadow-sm">
-          <h3 className="text-xs font-semibold text-[var(--color-admin-sage)] uppercase tracking-wider mb-2">Arriving Today</h3>
-          <p className="text-3xl font-[var(--font-display)]">{arrivingToday}</p>
-        </div>
-        <div className="bg-[var(--color-admin-shell)] border border-[var(--color-admin-mist)] rounded-xl p-5 shadow-sm">
-          <h3 className="text-xs font-semibold text-[var(--color-admin-sage)] uppercase tracking-wider mb-2">Departing Today</h3>
-          <p className="text-3xl font-[var(--font-display)]">{departingToday}</p>
-        </div>
-      </div>
-      <section className="mt-8 bg-white border border-[var(--color-admin-mist)] rounded-xl shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between border-b border-[var(--color-admin-mist)] px-5 py-4">
-          <div>
-            <h3 className="font-semibold text-[var(--color-admin-forest)]">Recent activity</h3>
-            <p className="text-xs text-[var(--color-admin-sage)] mt-1">Latest reservation and invoice updates</p>
-          </div>
-          <Link href="/admin/calendar" className="text-sm text-[var(--color-admin-terracotta)] hover:underline">Open calendar</Link>
-        </div>
-        {activities.length === 0 ? (
-          <p className="px-5 py-8 text-sm text-[var(--color-admin-sage)]">No recent activity to display.</p>
-        ) : (
-          <ul className="divide-y divide-[var(--color-admin-mist)]">
-            {activities.map((activity) => (
-              <li key={activity.id} className="flex items-start justify-between gap-4 px-5 py-4">
-                <div className="min-w-0">
-                  <p className="font-medium text-sm text-[var(--color-admin-forest)] break-words">{activity.label}</p>
-                  <p className="text-xs text-[var(--color-admin-sage)] mt-1 break-words">{activity.detail}</p>
-                </div>
-                <time className="shrink-0 text-xs text-[var(--color-admin-sage)]" dateTime={activity.timestamp.toISOString()}>
-                  {activity.timestamp.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                </time>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+
+      <section><div className="flex items-center justify-between mb-3"><h3 className="font-semibold text-[var(--color-admin-forest)]">Financial performance</h3><span className="text-xs text-[var(--color-admin-sage)]">Collected cash includes advances and completed invoice payments</span></div><div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"><MetricCard label="Collected this month" value={money(financial.monthRevenue)} detail={growthDetail} tone={financial.revenueGrowthPercent !== null && financial.revenueGrowthPercent >= 0 ? 'good' : 'default'} /><MetricCard label="Total collected" value={money(financial.collectedTotal)} detail="Across active invoice ledger" tone="good" /><MetricCard label="Outstanding dues" value={money(financial.outstandingDues)} detail={`${financial.dueInvoices} invoice${financial.dueInvoices === 1 ? '' : 's'} pending or due`} tone={financial.outstandingDues > 0 ? 'warning' : 'good'} /><MetricCard label="Average booking value" value={money(financial.averageBookingValue)} detail={`${financial.paidInvoices} paid invoice${financial.paidInvoices === 1 ? '' : 's'}`} /></div></section>
+
+      <section><div className="flex items-center justify-between mb-3"><h3 className="font-semibold text-[var(--color-admin-forest)]">Operations today</h3><span className="text-xs text-[var(--color-admin-sage)]">Cancelled reservations excluded from occupancy</span></div><div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"><MetricCard label="Occupancy rate" value={`${operations.occupancyRate.toFixed(0)}%`} detail={`${operations.occupiedUnits} occupied · ${operations.availableUnits} available`} tone={operations.occupancyRate >= 80 ? 'warning' : 'good'} /><MetricCard label="Currently in-house" value={operations.inHouseToday} detail={`${operations.totalUnits} active room types/inventory`} /><MetricCard label="Arriving today" value={operations.arrivingToday} detail="Check-in date matches resort date" /><MetricCard label="Departing today" value={operations.departingToday} detail={`${operations.totalReservations} total reservations`} /></div></section>
+
+      <section><div className="flex items-center justify-between mb-3"><h3 className="font-semibold text-[var(--color-admin-forest)]">Portfolio health</h3><span className="text-xs text-[var(--color-admin-sage)]">Current reservation inventory</span></div><div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4"><MetricCard label="Total reservations" value={operations.totalReservations} detail="All recorded statuses" /><MetricCard label="Cancelled reservations" value={operations.cancelledReservations} detail="Excluded from active occupancy" tone={operations.cancelledReservations > 0 ? 'danger' : 'good'} /><MetricCard label="Paid invoices" value={financial.paidInvoices} detail={`${financial.dueInvoices} pending or due`} tone="good" /></div></section>
+
+      <section><div className="flex items-center justify-between mb-3"><h3 className="font-semibold text-[var(--color-admin-forest)]">Room type performance</h3><span className="text-xs text-[var(--color-admin-sage)]">1BHK · 4BHK · 5BHK</span></div><div className="grid grid-cols-1 md:grid-cols-3 gap-4">{metrics.roomTypePerformance.map((room) => <div key={room.roomType} className="bg-white border border-[var(--color-admin-mist)] rounded-xl p-5 shadow-sm"><div className="flex justify-between items-center"><h4 className="font-semibold text-lg">{room.roomType}</h4><span className="text-xs text-[var(--color-admin-sage)]">{room.unitCount} inventory</span></div><div className="grid grid-cols-2 gap-3 mt-5 text-sm"><div><p className="text-xs text-[var(--color-admin-sage)]">Bookings</p><p className="font-semibold mt-1">{room.bookings}</p></div><div><p className="text-xs text-[var(--color-admin-sage)]">Revenue</p><p className="font-semibold mt-1">{money(room.revenueMinorUnits)}</p></div><div><p className="text-xs text-[var(--color-admin-sage)]">Occupied today</p><p className="font-semibold mt-1">{room.occupied}</p></div><div><p className="text-xs text-[var(--color-admin-sage)]">Available today</p><p className="font-semibold mt-1">{room.available}</p></div></div><div className="mt-4 h-2 rounded-full bg-[var(--color-admin-mineral)] overflow-hidden"><div className="h-full bg-[var(--color-admin-terracotta)] rounded-full" style={{ width: `${room.occupancyRate}%` }} /></div><p className="text-xs text-[var(--color-admin-sage)] mt-2">{room.occupancyRate.toFixed(0)}% occupancy today</p></div>)}</div></section>
+
+      <DashboardCharts revenueTrend={metrics.revenueTrend} occupancyTrend={metrics.occupancyTrend} roomTypes={metrics.roomTypePerformance} statusBreakdown={metrics.statusBreakdown} monthlyTrend={metrics.monthlyTrend} />
+
+      <section className="bg-white border border-[var(--color-admin-mist)] rounded-xl shadow-sm overflow-hidden"><div className="flex items-center justify-between border-b border-[var(--color-admin-mist)] px-5 py-4"><div><h3 className="font-semibold text-[var(--color-admin-forest)]">Recent activity</h3><p className="text-xs text-[var(--color-admin-sage)] mt-1">Latest reservation and invoice updates</p></div><Link href="/admin/invoices" className="text-sm text-[var(--color-admin-terracotta)] hover:underline">Open invoices</Link></div>{activities.length === 0 ? <p className="px-5 py-8 text-sm text-[var(--color-admin-sage)]">No recent activity to display.</p> : <ul className="divide-y divide-[var(--color-admin-mist)]">{activities.map((activity) => <li key={activity.id} className="flex items-start justify-between gap-4 px-5 py-4"><div className="min-w-0"><p className="font-medium text-sm text-[var(--color-admin-forest)] break-words">{activity.label}</p><p className="text-xs text-[var(--color-admin-sage)] mt-1 break-words">{activity.detail}</p></div><time className="shrink-0 text-xs text-[var(--color-admin-sage)]" dateTime={activity.timestamp.toISOString()}>{dateLabel(activity.timestamp)}</time></li>)}</ul>}</section>
     </div>
   );
 }

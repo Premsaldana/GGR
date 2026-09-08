@@ -7,11 +7,13 @@ import { and, eq, lte, gte, or } from 'drizzle-orm';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { toPaise } from '@/lib/invoice';
-import { isAllowedUnitSlug } from '@/lib/units';
+import { getCanonicalRoomType, isAllowedUnit } from '@/lib/units';
 
 export async function getUnits() {
   await requireAdmin();
-  return db.select().from(units).where(eq(units.active, true)).all().filter((unit) => isAllowedUnitSlug(unit.slug));
+  return db.select().from(units).where(eq(units.active, true)).all()
+    .filter(isAllowedUnit)
+    .map((unit) => ({ ...unit, displayName: getCanonicalRoomType(unit) || unit.displayName }));
 }
 
 export async function getReservations(monthStart: string, monthEnd: string) {
@@ -49,7 +51,7 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
     // Synchronous transaction to prevent locking/concurrency issues
     const result = db.transaction((tx) => {
       const unit = tx.select().from(units).where(and(eq(units.id, validData.unitId), eq(units.active, true))).get();
-      if (!unit || !isAllowedUnitSlug(unit.slug)) {
+      if (!unit || !isAllowedUnit(unit)) {
         throw new Error('INVALID_UNIT');
       }
 

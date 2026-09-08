@@ -21,7 +21,7 @@ export const invoiceCalculationSchema = z.object({
 });
 
 export const reservationFormSchema = z.object({
-  unitId: z.string().min(1, 'Unit is required'),
+  unitId: z.string().min(1, 'Room type is required'),
   guestName: z.string().min(2, 'Guest name is required'),
   phone: phoneSchema.optional().or(z.literal('')),
   email: emailSchema.optional().or(z.literal('')),

@@ -10,7 +10,7 @@ import { format, differenceInCalendarDays } from 'date-fns';
 import { calculateInvoice } from '@/lib/invoice';
 
 const formSchema = z.object({
-  unitId: z.string().min(1, 'Unit is required'),
+  unitId: z.string().min(1, 'Room type is required'),
   guestName: z.string().min(2, 'Guest name is required'),
   phone: z.string().optional(),
   email: z.string().email('Invalid email').or(z.literal('')).optional(),
@@ -235,10 +235,10 @@ export default function ReservationForm({
             <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-admin-sage)] border-b pb-1">Stay Details</h4>
             
             <div>
-              <label className="block text-sm font-medium mb-1">Unit <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium mb-1">Room Type <span className="text-red-500">*</span></label>
               <select required {...register("unitId")} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white">
-                <option value="">Select a unit...</option>
-                {units.length === 0 && <option value="" disabled>No units configured. Add an active unit before creating a reservation.</option>}
+                <option value="">Select a room type...</option>
+                {units.length === 0 && <option value="" disabled>No room types configured.</option>}
                 {units.map(u => <option key={u.id} value={u.id}>{u.displayName}</option>)}
               </select>
               {errors.unitId && <p className="text-red-500 text-xs mt-1">{errors.unitId.message}</p>}

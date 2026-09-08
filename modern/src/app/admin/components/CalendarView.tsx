@@ -118,7 +118,7 @@ export default function CalendarView() {
                   onClick={(e) => e.stopPropagation()}
                   className="mt-1 w-full bg-[var(--color-admin-mineral)] border border-[var(--color-admin-terracotta)]/30 text-[10px] px-1 py-0.5 rounded truncate hover:bg-[var(--color-admin-terracotta)] hover:text-white transition-colors block"
                 >
-                  {units.find(u => u.id === occ.unitId)?.displayName || 'Unit'} - {occ.bookingStatus}
+                  {units.find(u => u.id === occ.unitId)?.displayName || '—'} - {occ.bookingStatus}
                 </Link>
               ))}
             </button>

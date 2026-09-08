@@ -57,7 +57,7 @@ export default function InvoiceTableClient({ rows }: { rows: InvoiceRow[] }) {
           type="search"
           value={input}
           onChange={(event) => setInput(event.currentTarget.value)}
-          placeholder="Search invoice, reservation, guest, unit, date, or status"
+          placeholder="Search invoice, reservation, guest, room type, date, or status"
           className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-[var(--color-admin-terracotta)] focus:ring-1 focus:ring-[var(--color-admin-terracotta)]"
         />
       </div>
@@ -67,7 +67,7 @@ export default function InvoiceTableClient({ rows }: { rows: InvoiceRow[] }) {
             <tr>
               <th className="px-6 py-3 font-semibold">Invoice #</th>
               <th className="px-6 py-3 font-semibold">Guest</th>
-              <th className="px-6 py-3 font-semibold">Unit</th>
+              <th className="px-6 py-3 font-semibold">Room Type</th>
               <th className="px-6 py-3 font-semibold">Dates</th>
               <th className="px-6 py-3 font-semibold">Total Amount</th>
               <th className="px-6 py-3 font-semibold">Balance Due</th>

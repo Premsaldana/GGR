@@ -132,7 +132,7 @@ export default function ReservationDetailClient({ reservation, lineItems, unit, 
           <div className="space-y-4">
             <h3 className="font-semibold text-lg border-b pb-2">Guest & Stay</h3>
             <p><strong>Guest Name:</strong> {reservation.guestName}</p>
-            <p><strong>Unit:</strong> {unit?.displayName}</p>
+            <p><strong>Room Type:</strong> {unit?.displayName}</p>
             <p><strong>Check-In:</strong> {reservation.checkInDate}</p>
             <p><strong>Check-Out:</strong> {reservation.checkOutDate}</p>
             <p><strong>Guests:</strong> {reservation.adults} Adults, {reservation.children} Children</p>

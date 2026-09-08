@@ -6,7 +6,7 @@ export default function CalendarPage() {
       <header className="mb-6 flex justify-between items-end">
         <div>
           <h2 className="text-2xl font-[var(--font-display)] font-semibold mb-1">Calendar</h2>
-          <p className="text-[var(--color-admin-sage)] text-sm">Select an empty date to create a new reservation.</p>
+          <p className="text-[var(--color-admin-sage)] text-sm">Select an empty date to create a reservation and choose a room type.</p>
         </div>
       </header>
       
