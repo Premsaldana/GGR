@@ -7,6 +7,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import crypto from 'crypto';
 import { PaymentUploadForm } from './PaymentUploadForm';
 import { paymentProofs } from '@/db/schema';
+import { GuestRealtimeVerification } from './GuestRealtimeVerification';
 
 // Ensure the page isn't indexed by search engines
 export const metadata = {
@@ -164,6 +165,10 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
 
           {!isVerified && (
             <PaymentUploadForm token={token} hasPendingProof={hasPendingProof} />
+          )}
+
+          {!isVerified && (
+            <GuestRealtimeVerification token={token} invoiceId={invoiceData.id} />
           )}
 
         <div className="p-4 bg-gray-50 text-center text-xs text-gray-500 border-t border-gray-100">

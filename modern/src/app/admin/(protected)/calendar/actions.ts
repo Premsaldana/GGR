@@ -7,10 +7,11 @@ import { and, eq, lte, gte, or } from 'drizzle-orm';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { toPaise } from '@/lib/invoice';
+import { isAllowedUnitSlug } from '@/lib/units';
 
 export async function getUnits() {
   await requireAdmin();
-  return db.select().from(units).where(eq(units.active, true)).all();
+  return db.select().from(units).where(eq(units.active, true)).all().filter((unit) => isAllowedUnitSlug(unit.slug));
 }
 
 export async function getReservations(monthStart: string, monthEnd: string) {
@@ -48,7 +49,7 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
     // Synchronous transaction to prevent locking/concurrency issues
     const result = db.transaction((tx) => {
       const unit = tx.select().from(units).where(and(eq(units.id, validData.unitId), eq(units.active, true))).get();
-      if (!unit) {
+      if (!unit || !isAllowedUnitSlug(unit.slug)) {
         throw new Error('INVALID_UNIT');
       }
 
@@ -219,6 +220,7 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
 
 import { calculateInvoice, InvoiceCalculationInput } from '@/lib/invoice';
 import { invoices } from '@/db/schema';
+import { getInvoiceStayMetadata } from '@/lib/invoiceMetadata';
 
 export async function calculateInvoiceAction(input: InvoiceCalculationInput) {
   await requireAdmin();
@@ -269,11 +271,14 @@ export async function issueInvoiceAction(reservationId: string, clientDepositMin
       const invoiceId = crypto.randomUUID();
 
       const guest = tx.select().from(guests).where(eq(guests.id, reservation.guestId)).get();
+      const unit = tx.select().from(units).where(eq(units.id, reservation.unitId)).get();
+      if (!unit) throw new Error('Unit not found');
 
       const snapshot = {
         input,
         calculation: calcResult,
         guestName: guest?.fullName || 'Guest name pending',
+        ...getInvoiceStayMetadata(reservation, unit),
       };
 
       tx.insert(invoices).values({
@@ -313,4 +318,3 @@ export async function issueInvoiceAction(reservationId: string, clientDepositMin
     return { error: 'Failed to issue invoice. Please verify your permissions and try again.', type: 'SERVER_ERROR' };
   }
 }
-

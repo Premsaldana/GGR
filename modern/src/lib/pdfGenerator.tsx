@@ -30,7 +30,7 @@ interface InvoicePDFProps {
 }
 
 const InvoiceDocument = ({ invoice, snapshot, payments, qrArtifact }: InvoicePDFProps) => {
-  const lineItems = snapshot?.lineItems || [];
+  const lineItems = snapshot?.input?.lineItems || snapshot?.lineItems || [];
   const resData = snapshot || {};
   
   const advance = invoice.advanceMinorUnits || 0;
@@ -52,8 +52,8 @@ const InvoiceDocument = ({ invoice, snapshot, payments, qrArtifact }: InvoicePDF
             <Text>Guest: {resData.guestName}</Text>
             <Text>Reservation: {resData.reservationNumber}</Text>
             <Text>Unit: {resData.unitDisplayName || 'Unit'}</Text>
-            <Text>Check-In: {resData.checkInDate}</Text>
-            <Text>Check-Out: {resData.checkOutDate}</Text>
+            <Text>Check-In: {resData.checkInDate || '—'} at {resData.checkInTime || '1:00 PM'}</Text>
+            <Text>Check-Out: {resData.checkOutDate || '—'} at {resData.checkOutTime || '11:00 AM'}</Text>
           </View>
         </View>
 

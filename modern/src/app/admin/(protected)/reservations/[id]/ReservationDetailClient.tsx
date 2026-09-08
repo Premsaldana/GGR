@@ -7,6 +7,7 @@ import { InvoicePreview } from '../../../components/InvoicePreview';
 import { issueInvoiceAction } from '../../calendar/actions';
 import { InvoiceCalculationResult } from '@/lib/invoice';
 import { verifyProofAction, rejectProofAction, finalizeInvoiceAction } from './actions';
+import { useProofRealtime } from '@/lib/useProofRealtime';
 
 type Props = {
   reservation: any;
@@ -31,6 +32,13 @@ export default function ReservationDetailClient({ reservation, lineItems, unit, 
   const [paymentReference, setPaymentReference] = useState('');
   const [adminNote, setAdminNote] = useState('');
   const [rejectResubmit, setRejectResubmit] = useState(false);
+  const [liveProofs, setLiveProofs] = useState(proofs);
+
+  useProofRealtime(issuedInvoice?.id, {
+    onState: (message) => {
+      if (message.state.proofs) setLiveProofs(message.state.proofs as any[]);
+    },
+  });
 
   const handleIssue = async () => {
     setIsIssuing(true);
@@ -114,7 +122,7 @@ export default function ReservationDetailClient({ reservation, lineItems, unit, 
             onClick={() => setViewState('proofs')} 
             className={`px-4 py-2 rounded-md text-sm ${viewState === 'proofs' ? 'bg-[var(--color-admin-mineral)] text-[#233B35] font-semibold' : 'bg-gray-100 text-gray-600'}`}
           >
-            Proofs ({proofs.length})
+            Proofs ({liveProofs.length})
           </button>
         </div>
       </div>
@@ -199,11 +207,11 @@ export default function ReservationDetailClient({ reservation, lineItems, unit, 
           <div className="bg-white p-6 rounded-md shadow-sm border border-[var(--color-admin-mist)]">
             <h3 className="font-semibold text-lg border-b pb-4 mb-4">Payment Proofs</h3>
             
-            {proofs.length === 0 ? (
+            {liveProofs.length === 0 ? (
               <p className="text-sm text-gray-500 italic">No payment proofs uploaded for this reservation.</p>
             ) : (
               <div className="space-y-6">
-                {proofs.map(proof => (
+                {liveProofs.map(proof => (
                   <div key={proof.id} className="border border-gray-200 rounded-md p-4 bg-gray-50">
                     <div className="flex justify-between items-start mb-4">
                       <div>

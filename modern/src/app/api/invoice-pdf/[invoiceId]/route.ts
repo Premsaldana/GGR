@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { invoices, invoicePayments, qrPaymentArtifacts, reservations, guests } from '@/db/schema';
+import { invoices, invoicePayments, qrPaymentArtifacts, reservations, guests, units } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { generateInvoicePDFStream } from '@/lib/pdfGenerator';
 import { getSession } from '@/lib/session';
+import { getInvoiceStayMetadata } from '@/lib/invoiceMetadata';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ invoiceId: string }> }) {
   const session = await getSession();
@@ -19,6 +20,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const reservation = db.select().from(reservations).where(eq(reservations.id, invoice.reservationId)).get();
     if (!reservation) return new NextResponse('Reservation not found', { status: 404 });
+    const unit = db.select().from(units).where(eq(units.id, reservation.unitId)).get();
+    const stayMetadata = getInvoiceStayMetadata(reservation, unit);
 
     const guest = db.select().from(guests).where(eq(guests.id, reservation.guestId)).get();
     const guestSlug = guest ? guest.fullName.replace(/[^a-z0-9]/gi, '-').toLowerCase() : 'guest';
@@ -32,6 +35,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           amountMinorUnits: li.amountMinorUnits ?? (li.quantity * li.rateMinorUnits)
         }));
       }
+      snapshot = {
+        ...(snapshot || {}),
+        ...stayMetadata,
+        reservationNumber: snapshot?.reservationNumber || reservation.reservationNumber,
+        unitId: snapshot?.unitId || unit?.id,
+        unitDisplayName: snapshot?.unitDisplayName || unit?.displayName || 'Unit',
+        checkInDate: snapshot?.checkInDate || reservation.checkInDate,
+        checkOutDate: snapshot?.checkOutDate || reservation.checkOutDate,
+        checkInTime: snapshot?.checkInTime || stayMetadata.checkInTime,
+        checkOutTime: snapshot?.checkOutTime || stayMetadata.checkOutTime,
+      };
     } catch (e) {
       snapshot = null;
     }

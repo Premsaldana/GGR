@@ -1,48 +1,45 @@
 import { db } from './index';
 import { units } from './schema';
+import { eq } from 'drizzle-orm';
+import { ALLOWED_UNITS, DEFAULT_CHECK_IN_TIME, DEFAULT_CHECK_OUT_TIME } from '@/lib/units';
 import crypto from 'crypto';
 
 async function seed() {
-  console.log('Seeding units...');
-  
+  console.log('Seeding allowed units...');
   const existingUnits = db.select().from(units).all();
-  if (existingUnits.length > 0) {
-    console.log('Units already exist. Skipping seed.');
-    return;
-  }
+  const existingBySlug = new Map(existingUnits.map((unit) => [unit.slug, unit]));
 
-  const unitsData = [
-    {
-      id: crypto.randomUUID(),
-      displayName: '1 Bedroom Villa',
-      slug: '1-bedroom-villa',
-      active: true,
-      capacityAdults: 2,
-      capacityChildren: 1,
-    },
-    {
-      id: crypto.randomUUID(),
-      displayName: '4 Bedroom Villa',
-      slug: '4-bedroom-villa',
-      active: true,
-      capacityAdults: 8,
-      capacityChildren: 4,
-    },
-    {
-      id: crypto.randomUUID(),
-      displayName: '5 Bedroom Private Pool Villa',
-      slug: '5-bedroom-villa-private-pool',
-      active: true,
-      capacityAdults: 10,
-      capacityChildren: 5,
+  for (const allowedUnit of ALLOWED_UNITS) {
+    const existing = existingBySlug.get(allowedUnit.slug);
+    if (existing) {
+      db.update(units).set({
+        displayName: allowedUnit.displayName,
+        active: true,
+        capacityAdults: allowedUnit.capacityAdults,
+        capacityChildren: allowedUnit.capacityChildren,
+        defaultCheckInTime: DEFAULT_CHECK_IN_TIME,
+        defaultCheckOutTime: DEFAULT_CHECK_OUT_TIME,
+      }).where(eq(units.id, existing.id)).run();
+    } else {
+      db.insert(units).values({
+        id: crypto.randomUUID(),
+        displayName: allowedUnit.displayName,
+        slug: allowedUnit.slug,
+        active: true,
+        capacityAdults: allowedUnit.capacityAdults,
+        capacityChildren: allowedUnit.capacityChildren,
+        defaultCheckInTime: DEFAULT_CHECK_IN_TIME,
+        defaultCheckOutTime: DEFAULT_CHECK_OUT_TIME,
+      }).run();
     }
-  ];
-
-  for (const unit of unitsData) {
-    db.insert(units).values(unit).run();
   }
 
-  console.log('Seeded successfully.');
+  for (const existing of existingUnits) {
+    if (!ALLOWED_UNITS.some((allowedUnit) => allowedUnit.slug === existing.slug)) {
+      db.update(units).set({ active: false }).where(eq(units.id, existing.id)).run();
+    }
+  }
+  console.log('Allowed units seeded; historical units were retained but deactivated.');
 }
 
 seed().catch(console.error);
