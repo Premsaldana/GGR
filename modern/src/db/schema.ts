@@ -4,7 +4,6 @@ export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
   email: text('email').notNull().unique(),
   role: text('role').notNull(), // 'owner_admin'
-  totpSecret: text('totp_secret'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
@@ -136,15 +135,6 @@ export const auditEvents = sqliteTable('audit_events', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 });
 
-export const recoveryCodes = sqliteTable('recovery_codes', {
-  id: text('id').primaryKey(),
-  userId: text('user_id').notNull().references(() => users.id),
-  codeHash: text('code_hash').notNull(),
-  used: integer('used', { mode: 'boolean' }).default(false),
-  usedAt: integer('used_at', { mode: 'timestamp' }),
-  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
-});
-
 export const authChallenges = sqliteTable('auth_challenges', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id),
@@ -174,4 +164,3 @@ export const paymentProofs = sqliteTable('payment_proofs', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });
-
