@@ -2,8 +2,12 @@ import http from 'node:http';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import next from 'next';
+import nextEnv from '@next/env';
 import Database from 'better-sqlite3';
 import { WebSocketServer } from 'ws';
+
+const { loadEnvConfig } = nextEnv;
+loadEnvConfig(process.cwd(), process.env.NODE_ENV !== 'production');
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = process.env.HOSTNAME || '0.0.0.0';
