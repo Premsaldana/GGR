@@ -31,21 +31,28 @@ export function useProofRealtime(
     let stopped = false;
     let reconnectTimer: number | undefined;
     let reconnectDelay = 500;
+    let reconnectAttempts = 0;
+    let hasConnected = false;
+    let tokenRequest: AbortController | undefined;
 
     const connect = async () => {
+      if (stopped || reconnectAttempts >= 5) return;
+      reconnectAttempts += 1;
+      tokenRequest = new AbortController();
       const query = new URLSearchParams({ invoiceId });
       if (options.shareToken) query.set('shareToken', options.shareToken);
-      const tokenResponse = await fetch(`/api/realtime/token?${query.toString()}`);
+      const tokenResponse = await fetch(`/api/realtime/token?${query.toString()}`, { signal: tokenRequest.signal });
       if (!tokenResponse.ok || stopped) return;
       const { token } = await tokenResponse.json();
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       socket = new WebSocket(`${protocol}//${window.location.host}/api/realtime?token=${encodeURIComponent(token)}`);
-      socket.onopen = () => { reconnectDelay = 500; };
+      socket.onopen = () => { hasConnected = true; reconnectAttempts = 0; reconnectDelay = 500; };
       socket.onmessage = (event) => {
         try { onStateRef.current(JSON.parse(event.data) as ProofRealtimeMessage); } catch { /* ignore malformed messages */ }
       };
       socket.onclose = () => {
-        if (!stopped) {
+        const shouldReconnect = !stopped && (hasConnected || reconnectAttempts < 5);
+        if (shouldReconnect) {
           reconnectTimer = window.setTimeout(connect, reconnectDelay);
           reconnectDelay = Math.min(reconnectDelay * 2, 10000);
         }
@@ -53,11 +60,12 @@ export function useProofRealtime(
     };
 
     connect().catch(() => {
-      if (!stopped) reconnectTimer = window.setTimeout(connect, reconnectDelay);
+      if (!stopped && reconnectAttempts < 5) reconnectTimer = window.setTimeout(connect, reconnectDelay);
     });
     return () => {
       stopped = true;
       if (reconnectTimer) window.clearTimeout(reconnectTimer);
+      tokenRequest?.abort();
       socket?.close();
     };
   }, [invoiceId, options.shareToken]);

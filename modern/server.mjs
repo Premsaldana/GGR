@@ -15,6 +15,7 @@ if (!dbUrl || !sessionSecret) throw new Error('DATABASE_URL and SESSION_SECRET a
 const db = new Database(path.resolve(process.cwd(), dbUrl), { readonly: true });
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
+const upgradeHandler = app.getUpgradeHandler();
 const wss = new WebSocketServer({ noServer: true });
 const subscribers = new Map();
 
@@ -123,7 +124,7 @@ const server = http.createServer(async (request, response) => {
 server.on('upgrade', (request, socket, head) => {
   const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
   if (url.pathname !== '/api/realtime') {
-    socket.destroy();
+    upgradeHandler(request, socket, head);
     return;
   }
   const auth = verifyToken(url.searchParams.get('token'));

@@ -16,20 +16,30 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const res = await sendOtp(email);
-    if (res?.error) setError(res.error);
-    else setStep('otp');
-    setLoading(false);
+    try {
+      const res = await sendOtp(email);
+      if (res?.error) setError(res.error);
+      else setStep('otp');
+    } catch {
+      setError('We could not start sign-in. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const res = await verifyOtp(otp);
-    if (res?.error) setError(res.error);
-    else router.push('/admin');
-    setLoading(false);
+    try {
+      const res = await verifyOtp(otp);
+      if (res?.error) setError(res.error);
+      else router.push('/admin');
+    } catch {
+      setError('We could not verify the code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
