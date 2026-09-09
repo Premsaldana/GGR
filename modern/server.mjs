@@ -15,7 +15,6 @@ if (!dbUrl || !sessionSecret) throw new Error('DATABASE_URL and SESSION_SECRET a
 const db = new Database(path.resolve(process.cwd(), dbUrl), { readonly: true });
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
-const upgradeHandler = app.getUpgradeHandler();
 const wss = new WebSocketServer({ noServer: true });
 const subscribers = new Map();
 
@@ -98,6 +97,7 @@ function readBody(request) {
 }
 
 await app.prepare();
+const upgradeHandler = app.getUpgradeHandler();
 const server = http.createServer(async (request, response) => {
   const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
   if (url.pathname === '/api/realtime/publish' && request.method === 'POST') {
