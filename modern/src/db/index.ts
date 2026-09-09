@@ -11,4 +11,6 @@ if (!dbUrl) {
 const dbPath = path.resolve(/*turbopackIgnore: true*/ process.cwd(), dbUrl);
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 const sqlite = new Database(dbPath);
+const schemaPath = path.resolve(process.cwd(), 'src', 'db', 'schema.sql');
+sqlite.exec(fs.readFileSync(schemaPath, 'utf8'));
 export const db = drizzle(sqlite, { schema });
