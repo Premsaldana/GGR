@@ -13,9 +13,10 @@ export function isAllowedUnitSlug(slug: string) {
 
 export function getCanonicalRoomType(unit: { slug: string; displayName: string }) {
   const value = `${unit.slug} ${unit.displayName}`.toLowerCase();
-  if (value.includes('1bhk') || value.includes('1 bedroom')) return '1BHK';
-  if (value.includes('4bhk') || value.includes('4 bedroom')) return '4BHK';
-  if (value.includes('5bhk') || value.includes('5 bedroom')) return '5BHK';
+  const compactValue = value.replace(/[^a-z0-9]/g, '');
+  if (compactValue.includes('1bhk') || value.includes('1 bedroom')) return '1BHK';
+  if (compactValue.includes('4bhk') || value.includes('4 bedroom')) return '4BHK';
+  if (compactValue.includes('5bhk') || value.includes('5 bedroom')) return '5BHK';
   return null;
 }
 

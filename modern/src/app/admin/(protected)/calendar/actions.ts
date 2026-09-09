@@ -7,10 +7,48 @@ import { and, eq, lte, gte, or } from 'drizzle-orm';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { toPaise } from '@/lib/invoice';
-import { getCanonicalRoomType, isAllowedUnit } from '@/lib/units';
+import { ALLOWED_UNITS, DEFAULT_CHECK_IN_TIME, DEFAULT_CHECK_OUT_TIME, getCanonicalRoomType, isAllowedUnit } from '@/lib/units';
+
+function ensureAllowedUnits() {
+  const existingUnits = db.select().from(units).all();
+  const existingByType = new Map(
+    existingUnits
+      .map((unit) => [getCanonicalRoomType(unit), unit] as const)
+      .filter((entry) => entry[0] !== null) as Array<readonly [string, typeof existingUnits[number]]>
+  );
+
+  for (const allowedUnit of ALLOWED_UNITS) {
+    const existing = existingByType.get(allowedUnit.displayName);
+    if (existing) {
+      if (!existing.active || existing.displayName !== allowedUnit.displayName) {
+        db.update(units).set({
+          displayName: allowedUnit.displayName,
+          active: true,
+          capacityAdults: allowedUnit.capacityAdults,
+          capacityChildren: allowedUnit.capacityChildren,
+          defaultCheckInTime: DEFAULT_CHECK_IN_TIME,
+          defaultCheckOutTime: DEFAULT_CHECK_OUT_TIME,
+        }).where(eq(units.id, existing.id)).run();
+      }
+      continue;
+    }
+
+    db.insert(units).values({
+      id: crypto.randomUUID(),
+      displayName: allowedUnit.displayName,
+      slug: allowedUnit.slug,
+      active: true,
+      capacityAdults: allowedUnit.capacityAdults,
+      capacityChildren: allowedUnit.capacityChildren,
+      defaultCheckInTime: DEFAULT_CHECK_IN_TIME,
+      defaultCheckOutTime: DEFAULT_CHECK_OUT_TIME,
+    }).run();
+  }
+}
 
 export async function getUnits() {
   await requireAdmin();
+  ensureAllowedUnits();
   return db.select().from(units).where(eq(units.active, true)).all()
     .filter(isAllowedUnit)
     .map((unit) => ({ ...unit, displayName: getCanonicalRoomType(unit) || unit.displayName }));

@@ -10,7 +10,7 @@ if (!isAllowedUnitSlug('1bhk') || !isAllowedUnitSlug('4bhk') || !isAllowedUnitSl
 if (isAllowedUnitSlug('test-unit') || isAllowedUnitSlug('2bhk')) {
   throw new Error('Arbitrary units should be rejected');
 }
-if (getCanonicalRoomType({ slug: '1-bedroom-villa', displayName: '1 Bedroom Villa' }) !== '1BHK' || getCanonicalRoomType({ slug: '5-bedroom-villa-private-pool', displayName: '5 Bedroom Private Pool Villa' }) !== '5BHK') {
+if (getCanonicalRoomType({ slug: '1-bedroom-villa', displayName: '1 Bedroom Villa' }) !== '1BHK' || getCanonicalRoomType({ slug: '5-bedroom-villa-private-pool', displayName: '5 Bedroom Private Pool Villa' }) !== '5BHK' || getCanonicalRoomType({ slug: '4-bhk-apartments', displayName: '4 BHK Apartments' }) !== '4BHK') {
   throw new Error('Legacy room labels should map to canonical room types');
 }
 
