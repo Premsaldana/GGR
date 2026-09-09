@@ -1,4 +1,5 @@
 import http from 'node:http';
+import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import next from 'next';
@@ -15,8 +16,9 @@ const port = Number(process.env.PORT || 3000);
 const dbUrl = process.env.DATABASE_URL;
 const sessionSecret = process.env.SESSION_SECRET;
 if (!dbUrl || !sessionSecret) throw new Error('DATABASE_URL and SESSION_SECRET are required');
-
-const db = new Database(path.resolve(process.cwd(), dbUrl), { readonly: true });
+const dbPath = path.resolve(process.cwd(), dbUrl);
+fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+const db = new Database(dbPath, { readonly: true });
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 const wss = new WebSocketServer({ noServer: true });
