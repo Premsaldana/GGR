@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, LockKeyhole, Save } from 'lucide-react';
-import { formatDateForDisplay, parseDisplayDate } from '@/lib/pricing-core';
+import { formatDateForDisplay } from '@/lib/pricing-core';
 import type { PricingEvent } from '@/lib/pricing-events';
 
 function shiftMonth(month: string, offset: number) {
@@ -96,6 +96,21 @@ export default function PricingEditor() {
     setSelectedPrice(existing ? String(existing / 100) : '');
   }
 
+  function setRangeStart(value: string) {
+    setStartDate(value);
+    setStartDateDisplay(value ? formatDateForDisplay(value) : '');
+    if (endDate && value > endDate) {
+      setEndDate('');
+      setEndDateDisplay('');
+    }
+  }
+
+  function setRangeEnd(value: string) {
+    if (startDate && value < startDate) return;
+    setEndDate(value);
+    setEndDateDisplay(value ? formatDateForDisplay(value) : '');
+  }
+
   async function saveSingleAction(action: 'price' | 'sold-off' | 'restore') {
     if (!selectedDate) return;
     const body: Record<string, unknown> = { startDate: selectedDate, endDate: selectedDate };
@@ -148,8 +163,8 @@ export default function PricingEditor() {
       <div className="mb-5"><h3 className="font-semibold text-[var(--color-admin-forest)]">Update a date range</h3><p className="mt-1 text-xs text-[var(--color-admin-sage)]">Use one action for a single date or a continuous range.</p></div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <label className="text-sm font-medium text-[var(--color-admin-forest)]">Action<select value={operation} onChange={(event) => setOperation(event.target.value as Operation)} className="admin-input mt-2 w-full"><option value="price">Set nightly price</option><option value="sold-off">Mark Sold Off</option><option value="restore">Reverse Sold Off</option></select></label>
-        <label className="text-sm font-medium text-[var(--color-admin-forest)]">Start date<input type="text" inputMode="numeric" placeholder="DD-MM-YYYY" value={startDateDisplay} onChange={(event) => { setStartDateDisplay(event.target.value); setStartDate(parseDisplayDate(event.target.value) ?? ''); }} className="admin-input mt-2 w-full" /></label>
-        <label className="text-sm font-medium text-[var(--color-admin-forest)]">End date<input type="text" inputMode="numeric" placeholder="DD-MM-YYYY" value={endDateDisplay} onChange={(event) => { setEndDateDisplay(event.target.value); setEndDate(parseDisplayDate(event.target.value) ?? ''); }} className="admin-input mt-2 w-full" /></label>
+        <label className="text-sm font-medium text-[var(--color-admin-forest)]">Start date<span className="relative mt-2 block"><input type="text" readOnly placeholder="DD-MM-YYYY" value={startDateDisplay} className="admin-input w-full" aria-hidden="true" tabIndex={-1} /><input type="date" value={startDate} max={endDate || undefined} onChange={(event) => setRangeStart(event.target.value)} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" aria-label="Choose start date" /></span></label>
+        <label className="text-sm font-medium text-[var(--color-admin-forest)]">End date<span className="relative mt-2 block"><input type="text" readOnly placeholder="DD-MM-YYYY" value={endDateDisplay} className="admin-input w-full" aria-hidden="true" tabIndex={-1} /><input type="date" value={endDate} min={startDate || undefined} onChange={(event) => setRangeEnd(event.target.value)} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" aria-label="Choose end date" /></span></label>
         {operation === 'price' ? <label className="text-sm font-medium text-[var(--color-admin-forest)]">Nightly price (INR)<input type="number" min="1" step="1" inputMode="decimal" value={price} onChange={(event) => setPrice(event.target.value)} className="admin-input mt-2 w-full" placeholder="e.g. 25000" /></label> : <label className="text-sm font-medium text-[var(--color-admin-forest)]">Reason <span className="font-normal text-[var(--color-admin-sage)]">(optional)</span><input value={reason} onChange={(event) => setReason(event.target.value)} className="admin-input mt-2 w-full" placeholder="Private event" /></label>}
       </div>
       <div className="mt-5 flex justify-end"><button type="button" className="admin-button admin-button--primary" onClick={() => void save()} disabled={status === 'saving'}><Save size={16} /> {status === 'saving' ? 'Saving…' : 'Save update'}</button></div>
