@@ -5,7 +5,7 @@ import { ALLOWED_UNITS, DEFAULT_CHECK_IN_TIME, DEFAULT_CHECK_OUT_TIME } from '@/
 import crypto from 'crypto';
 
 async function seed() {
-  console.log('Seeding allowed units...');
+  console.log('Seeding Private Pool Villa inventory...');
   const existingUnits = db.select().from(units).all();
   const existingBySlug = new Map(existingUnits.map((unit) => [unit.slug, unit]));
 
@@ -39,7 +39,7 @@ async function seed() {
       db.update(units).set({ active: false }).where(eq(units.id, existing.id)).run();
     }
   }
-  console.log('Allowed units seeded; historical units were retained but deactivated.');
+  console.log('Private Pool Villa seeded; historical units were retained but deactivated.');
 }
 
 seed().catch(console.error);

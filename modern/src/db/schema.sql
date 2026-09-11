@@ -38,6 +38,17 @@ CREATE TABLE IF NOT EXISTS room_prices (
   UNIQUE (unit_id, rate_code, date)
 );
 CREATE INDEX IF NOT EXISTS room_prices_date_unit_idx ON room_prices(date, unit_id);
+CREATE TABLE IF NOT EXISTS room_availability (
+  id TEXT PRIMARY KEY NOT NULL,
+  unit_id TEXT NOT NULL REFERENCES units(id),
+  date TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'sold_off',
+  reason TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  UNIQUE (unit_id, date)
+);
+CREATE INDEX IF NOT EXISTS room_availability_date_unit_idx ON room_availability(date, unit_id);
 CREATE TABLE IF NOT EXISTS reservations (
   id TEXT PRIMARY KEY NOT NULL,
   reservation_number TEXT NOT NULL UNIQUE,

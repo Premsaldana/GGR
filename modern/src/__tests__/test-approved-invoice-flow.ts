@@ -1,22 +1,25 @@
 import { ALLOWED_UNITS, DEFAULT_CHECK_IN_TIME, DEFAULT_CHECK_OUT_TIME, getCanonicalRoomType, isAllowedUnitSlug } from '../lib/units';
 import { getInvoiceStayMetadata } from '../lib/invoiceMetadata';
 
-if (ALLOWED_UNITS.map((unit) => unit.slug).join(',') !== '1bhk,4bhk,5bhk') {
-  throw new Error('Allowed unit catalog must contain only 1bhk, 4bhk, and 5bhk');
+if (ALLOWED_UNITS.map((unit) => unit.slug).join(',') !== 'private-pool-villa') {
+  throw new Error('Allowed unit catalog must contain only private-pool-villa');
 }
-if (!isAllowedUnitSlug('1bhk') || !isAllowedUnitSlug('4bhk') || !isAllowedUnitSlug('5bhk')) {
-  throw new Error('Approved units should be accepted');
+if (!isAllowedUnitSlug('private-pool-villa')) {
+  throw new Error('Private Pool Villa must be an allowed unit');
 }
-if (isAllowedUnitSlug('test-unit') || isAllowedUnitSlug('2bhk')) {
-  throw new Error('Arbitrary units should be rejected');
+if (isAllowedUnitSlug('test-unit') || isAllowedUnitSlug('legacy-room')) {
+  throw new Error('Legacy or arbitrary units should be rejected');
 }
-if (getCanonicalRoomType({ slug: '1-bedroom-villa', displayName: '1 Bedroom Villa' }) !== '1BHK' || getCanonicalRoomType({ slug: '5-bedroom-villa-private-pool', displayName: '5 Bedroom Private Pool Villa' }) !== '5BHK' || getCanonicalRoomType({ slug: '4-bhk-apartments', displayName: '4 BHK Apartments' }) !== '4BHK') {
-  throw new Error('Legacy room labels should map to canonical room types');
+if (getCanonicalRoomType({ slug: 'private-pool-villa', displayName: 'Private Pool Villa' }) !== 'Private Pool Villa') {
+  throw new Error('Private Pool Villa canonicalization failed');
+}
+if (getCanonicalRoomType({ slug: 'legacy-room', displayName: 'Legacy room' }) !== null) {
+  throw new Error('Legacy room labels should not map to an active room type');
 }
 
 const reservation = { reservationNumber: 'RES-1', checkInDate: '2026-09-08', checkOutDate: '2026-09-09' };
-const withUnit = getInvoiceStayMetadata(reservation, { id: 'u1', displayName: '5BHK', defaultCheckInTime: null, defaultCheckOutTime: null });
-if (withUnit.unitDisplayName !== '5BHK' || withUnit.checkInTime !== DEFAULT_CHECK_IN_TIME || withUnit.checkOutTime !== DEFAULT_CHECK_OUT_TIME) {
+const withUnit = getInvoiceStayMetadata(reservation, { id: 'u1', displayName: 'Private Pool Villa', defaultCheckInTime: null, defaultCheckOutTime: null });
+if (withUnit.unitDisplayName !== 'Private Pool Villa' || withUnit.checkInTime !== DEFAULT_CHECK_IN_TIME || withUnit.checkOutTime !== DEFAULT_CHECK_OUT_TIME) {
   throw new Error(`Unexpected configured metadata: ${JSON.stringify(withUnit)}`);
 }
 
@@ -25,4 +28,4 @@ if (legacy.unitDisplayName !== 'Unit' || legacy.checkInTime !== DEFAULT_CHECK_IN
   throw new Error(`Unexpected legacy fallback metadata: ${JSON.stringify(legacy)}`);
 }
 
-console.log('Approved invoice flow regression tests passed');
+console.log('Single-villa invoice flow regression tests passed');

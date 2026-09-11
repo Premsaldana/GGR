@@ -1,25 +1,25 @@
-export const ALLOWED_UNITS = [
-  { slug: '1bhk', displayName: '1BHK', capacityAdults: 2, capacityChildren: 1 },
-  { slug: '4bhk', displayName: '4BHK', capacityAdults: 8, capacityChildren: 4 },
-  { slug: '5bhk', displayName: '5BHK', capacityAdults: 10, capacityChildren: 5 },
-] as const;
+export const PRIVATE_POOL_VILLA = {
+  slug: 'private-pool-villa',
+  displayName: 'Private Pool Villa',
+  capacityAdults: 10,
+  capacityChildren: 5,
+} as const;
+
+export const ALLOWED_UNITS = [PRIVATE_POOL_VILLA] as const;
 
 export const DEFAULT_CHECK_IN_TIME = '1:00 PM';
 export const DEFAULT_CHECK_OUT_TIME = '11:00 AM';
 
 export function isAllowedUnitSlug(slug: string) {
-  return ALLOWED_UNITS.some((unit) => unit.slug === slug);
+  return slug === PRIVATE_POOL_VILLA.slug;
 }
 
 export function getCanonicalRoomType(unit: { slug: string; displayName: string }) {
   const value = `${unit.slug} ${unit.displayName}`.toLowerCase();
-  const compactValue = value.replace(/[^a-z0-9]/g, '');
-  if (compactValue.includes('1bhk') || value.includes('1 bedroom')) return '1BHK';
-  if (compactValue.includes('4bhk') || value.includes('4 bedroom')) return '4BHK';
-  if (compactValue.includes('5bhk') || value.includes('5 bedroom')) return '5BHK';
+  if (value.includes('private-pool-villa') || value.includes('private pool villa')) return PRIVATE_POOL_VILLA.displayName;
   return null;
 }
 
 export function isAllowedUnit(unit: { slug: string; displayName: string }) {
-  return getCanonicalRoomType(unit) !== null;
+  return getCanonicalRoomType(unit) === PRIVATE_POOL_VILLA.displayName;
 }

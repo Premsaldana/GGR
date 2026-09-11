@@ -613,3 +613,33 @@ button { color: inherit; }
   .availability-booking-bar { align-items: stretch; flex-direction: column; }
   .availability-book-button { width: 100%; }
 }
+
+/* Single-inventory month grid: no spreadsheet scroll, readable on every viewport. */
+.availability-shell { border-radius: var(--radius-lg); }
+.availability-dot--sold { background: var(--color-error); }
+.availability-calendar { margin-top: 1.25rem; border: 1px solid var(--color-border); background: var(--color-base-100); }
+.availability-weekdays, .availability-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.availability-weekdays { border-bottom: 1px solid var(--color-border); }
+.availability-weekdays span { padding: .8rem .35rem; color: var(--color-text-muted); font-size: .7rem; font-weight: 600; letter-spacing: .08em; text-align: center; text-transform: uppercase; }
+.availability-grid { gap: 1px; background: var(--color-border); }
+.availability-blank { min-height: 6.2rem; background: var(--color-base-100); }
+.availability-day { display: flex; min-height: 6.2rem; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: .75rem; padding: .75rem; border: 0; background: var(--color-surface); color: var(--color-text-primary); text-align: left; transition: background var(--duration-fast) var(--ease-default), transform var(--duration-fast) var(--ease-default); }
+.availability-day:not(:disabled):hover { background: color-mix(in srgb, var(--color-cta) 8%, var(--color-surface)); transform: translateY(-1px); }
+.availability-day:focus-visible { position: relative; z-index: 1; outline: 2px solid var(--focus-ring-color); outline-offset: -2px; }
+.availability-day__number { font-size: .8rem; font-weight: 600; }
+.availability-day__status { display: inline-flex; min-height: 1.4rem; align-items: center; gap: .25rem; font-size: clamp(.62rem, 1.1vw, .78rem); line-height: 1.2; }
+.availability-day--available .availability-day__status { color: var(--color-cta); font-weight: 600; }
+.availability-day--sold-off { background: color-mix(in srgb, var(--color-error) 6%, var(--color-surface)); color: var(--color-error); }
+.availability-day--sold-off .availability-day__status { font-weight: 600; }
+.availability-day--unpriced { color: var(--color-text-muted); }
+.availability-day--unpriced .availability-day__status { font-size: .65rem; }
+.availability-day--selected { box-shadow: inset 0 0 0 2px var(--color-cta); }
+.availability-book-button { min-height: 3.25rem; padding-inline: 2rem; font-weight: 600; }
+@media (max-width: 560px) {
+  .availability-shell { padding: 1rem; }
+  .availability-weekdays span { font-size: .58rem; letter-spacing: .02em; }
+  .availability-blank, .availability-day { min-height: 5.5rem; }
+  .availability-day { gap: .45rem; padding: .55rem .4rem; }
+  .availability-day__status { flex-direction: column; align-items: flex-start; gap: .1rem; font-size: .62rem; }
+  .availability-day--sold-off .availability-day__status { font-size: .55rem; }
+}

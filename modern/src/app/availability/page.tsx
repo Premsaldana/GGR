@@ -12,7 +12,7 @@ export default function AvailabilityPage() {
       <div className="availability-page__intro">
         <p className="eyebrow">Goa Garden Resort · Colva</p>
         <h1>Availability &amp; prices</h1>
-        <p>Plan your stay with a clear view of current room pricing. This calendar is read-only; booking continues through our existing enquiry flow.</p>
+        <p>Plan your stay with a clear view of current Private Pool Villa pricing. This calendar is read-only; booking continues through our existing enquiry flow.</p>
       </div>
       <PriceCalendar initialMonth={new Date().toISOString().slice(0, 7)} />
     </main>

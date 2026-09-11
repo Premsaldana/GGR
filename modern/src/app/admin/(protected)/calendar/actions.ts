@@ -51,7 +51,7 @@ export async function getUnits() {
   ensureAllowedUnits();
   return db.select().from(units).where(eq(units.active, true)).all()
     .filter(isAllowedUnit)
-    .map((unit) => ({ ...unit, displayName: getCanonicalRoomType(unit) || unit.displayName }));
+    .map((unit) => ({ ...unit, displayName: getCanonicalRoomType(unit) || 'Private Pool Villa' }));
 }
 
 export async function getReservations(monthStart: string, monthEnd: string) {

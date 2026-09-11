@@ -43,6 +43,19 @@ export const roomPrices = sqliteTable('room_prices', {
   dateUnitIndex: index('room_prices_date_unit_idx').on(table.date, table.unitId),
 }));
 
+export const roomAvailability = sqliteTable('room_availability', {
+  id: text('id').primaryKey(),
+  unitId: text('unit_id').notNull().references(() => units.id),
+  date: text('date').notNull(),
+  status: text('status').notNull().default('sold_off'),
+  reason: text('reason'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+}, (table) => ({
+  unitDateUnique: uniqueIndex('room_availability_unit_date_unique').on(table.unitId, table.date),
+  dateUnitIndex: index('room_availability_date_unit_idx').on(table.date, table.unitId),
+}));
+
 export const reservations = sqliteTable('reservations', {
   id: text('id').primaryKey(),
   reservationNumber: text('reservation_number').notNull().unique(),
