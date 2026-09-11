@@ -565,6 +565,10 @@ button { color: inherit; }
   .parallax-media__plane { transform: none !important; }
 }
 
+/* Admin Pricing only: configured-price state. Kept separate from guest availability styles. */
+.admin-pricing-available-card { border-color: #bbf7d0; background: #f0fdf4; }
+.admin-pricing-available-text { color: #166534; }
+
 /* Read-only pricing calendar */
 .availability-page { min-height: 100svh; padding: 9rem var(--gutter) 6rem; background: var(--color-base-100); }
 .availability-page__intro, .availability-shell { width: min(100%, var(--max-content)); margin-inline: auto; }
