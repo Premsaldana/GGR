@@ -7,6 +7,7 @@ import { getMonthlyPrices, getPrivatePoolVilla, CURRENCY, RATE_CODE } from '@/li
 import { dateSchema } from '@/lib/pricing-core';
 import { requireAdmin } from '@/lib/session';
 import { PRIVATE_POOL_VILLA } from '@/lib/units';
+import { publishPricingEvent } from '@/lib/pricing-events';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -96,6 +97,16 @@ export async function PUT(request: NextRequest) {
         requestId: request.headers.get('x-request-id'), createdAt: now,
       }).run();
       return { updatedDates: dates.length, unit: { ...villa, displayName: PRIVATE_POOL_VILLA.displayName } };
+    });
+    publishPricingEvent({
+      eventId: crypto.randomUUID(),
+      action: input.amountMinorUnits !== undefined ? 'price_updated' : input.soldOff === true ? 'sold_off' : 'sold_off_reversed',
+      unitId: villa.id,
+      dates,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      ...(input.amountMinorUnits !== undefined ? { amountMinorUnits: input.amountMinorUnits, currency: CURRENCY } : {}),
+      soldOff: input.soldOff === true,
     });
     return NextResponse.json(result);
   } catch (error) {

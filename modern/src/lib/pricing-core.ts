@@ -43,3 +43,17 @@ export function normalizePricePayload(input: z.input<typeof priceInputSchema>) {
   const parsed = validatePriceInput(input);
   return { ...parsed, rateCode: parsed.rateCode || RATE_CODE, currency: CURRENCY };
 }
+
+export function formatDateForDisplay(value: string) {
+  const [year, month, day] = value.split('-');
+  return year && month && day ? `${day}-${month}-${year}` : value;
+}
+
+export function parseDisplayDate(value: string) {
+  const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(value.trim());
+  if (!match) return null;
+  const [, day, month, year] = match;
+  const iso = `${year}-${month}-${day}`;
+  const parsed = new Date(`${iso}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === iso ? iso : null;
+}

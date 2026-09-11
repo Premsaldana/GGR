@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, LockKeyhole, Save } from 'lucide-react';
+import { formatDateForDisplay, parseDisplayDate } from '@/lib/pricing-core';
+import type { PricingEvent } from '@/lib/pricing-events';
 
 function shiftMonth(month: string, offset: number) {
   const [year, monthNumber] = month.split('-').map(Number);
@@ -28,6 +30,8 @@ export default function PricingEditor() {
   const [operation, setOperation] = useState<Operation>('price');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [startDateDisplay, setStartDateDisplay] = useState('');
+  const [endDateDisplay, setEndDateDisplay] = useState('');
   const [price, setPrice] = useState('');
   const [reason, setReason] = useState('');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -46,6 +50,34 @@ export default function PricingEditor() {
   }
   // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
   useEffect(() => { void load(); }, [month]);
+
+  useEffect(() => {
+    const source = new EventSource('/api/prices/events');
+    let hasOpened = false;
+    source.onopen = () => {
+      if (hasOpened) void load();
+      hasOpened = true;
+    };
+    source.addEventListener('pricing', (event) => {
+      const pricingEvent = JSON.parse((event as MessageEvent<string>).data) as PricingEvent;
+      setData((current) => {
+        if (!current || current.units[0]?.id !== pricingEvent.unitId) return current;
+        const affected = new Set(pricingEvent.dates);
+        const prices = pricingEvent.action === 'price_updated'
+          ? [...current.prices.filter((item) => !affected.has(item.date)), ...pricingEvent.dates.map((date) => ({ date, amountMinorUnits: pricingEvent.amountMinorUnits ?? 0, currency: pricingEvent.currency ?? 'INR' }))]
+          : current.prices;
+        const availability = pricingEvent.action === 'sold_off'
+          ? [...current.availability.filter((item) => !affected.has(item.date)), ...pricingEvent.dates.map((date) => ({ date, status: 'sold_off', reason: null }))]
+          : pricingEvent.action === 'sold_off_reversed'
+            ? current.availability.filter((item) => !affected.has(item.date))
+            : current.availability;
+        return { ...current, prices, availability };
+      });
+    });
+    return () => source.close();
+    // The stream is intentionally tied to the current month view.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [month]);
 
   function dateForDay(day: number) { return `${month}-${String(day).padStart(2, '0')}`; }
   function dateState(date: string) {
@@ -79,7 +111,7 @@ export default function PricingEditor() {
       const response = await fetch('/api/admin/prices', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const result = await response.json() as { error?: string; updatedDates?: number };
       if (!response.ok) throw new Error(result.error || 'Unable to save availability');
-      setStatus('saved'); setMessage(`${selectedDate} updated.`); await load();
+      setStatus('saved'); setMessage(`${formatDateForDisplay(selectedDate)} updated.`); await load();
       setSelectedDate(null);
     } catch (error) { setStatus('error'); setMessage(error instanceof Error ? error.message : 'Unable to save availability'); }
   }
@@ -116,8 +148,8 @@ export default function PricingEditor() {
       <div className="mb-5"><h3 className="font-semibold text-[var(--color-admin-forest)]">Update a date range</h3><p className="mt-1 text-xs text-[var(--color-admin-sage)]">Use one action for a single date or a continuous range.</p></div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <label className="text-sm font-medium text-[var(--color-admin-forest)]">Action<select value={operation} onChange={(event) => setOperation(event.target.value as Operation)} className="admin-input mt-2 w-full"><option value="price">Set nightly price</option><option value="sold-off">Mark Sold Off</option><option value="restore">Reverse Sold Off</option></select></label>
-        <label className="text-sm font-medium text-[var(--color-admin-forest)]">Start date<input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="admin-input mt-2 w-full" /></label>
-        <label className="text-sm font-medium text-[var(--color-admin-forest)]">End date<input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className="admin-input mt-2 w-full" /></label>
+        <label className="text-sm font-medium text-[var(--color-admin-forest)]">Start date<input type="text" inputMode="numeric" placeholder="DD-MM-YYYY" value={startDateDisplay} onChange={(event) => { setStartDateDisplay(event.target.value); setStartDate(parseDisplayDate(event.target.value) ?? ''); }} className="admin-input mt-2 w-full" /></label>
+        <label className="text-sm font-medium text-[var(--color-admin-forest)]">End date<input type="text" inputMode="numeric" placeholder="DD-MM-YYYY" value={endDateDisplay} onChange={(event) => { setEndDateDisplay(event.target.value); setEndDate(parseDisplayDate(event.target.value) ?? ''); }} className="admin-input mt-2 w-full" /></label>
         {operation === 'price' ? <label className="text-sm font-medium text-[var(--color-admin-forest)]">Nightly price (INR)<input type="number" min="1" step="1" inputMode="decimal" value={price} onChange={(event) => setPrice(event.target.value)} className="admin-input mt-2 w-full" placeholder="e.g. 25000" /></label> : <label className="text-sm font-medium text-[var(--color-admin-forest)]">Reason <span className="font-normal text-[var(--color-admin-sage)]">(optional)</span><input value={reason} onChange={(event) => setReason(event.target.value)} className="admin-input mt-2 w-full" placeholder="Private event" /></label>}
       </div>
       <div className="mt-5 flex justify-end"><button type="button" className="admin-button admin-button--primary" onClick={() => void save()} disabled={status === 'saving'}><Save size={16} /> {status === 'saving' ? 'Saving…' : 'Save update'}</button></div>
@@ -125,6 +157,6 @@ export default function PricingEditor() {
 
     {status === 'loading' && <p className="rounded-xl bg-white p-8 text-sm text-[var(--color-admin-sage)]">Loading availability…</p>}
     {status === 'error' && !data && <button type="button" className="admin-button admin-button--primary" onClick={() => void load()}>Try again</button>}
-    {data?.units[0] && <section className="rounded-xl border border-[var(--color-admin-mist)] bg-white p-5 shadow-sm"><div className="mb-4 flex items-end justify-between gap-4"><div><h3 className="font-semibold text-[var(--color-admin-forest)]">Current state · {monthLabel(month)}</h3><p className="mt-1 text-xs text-[var(--color-admin-sage)]">{data.units[0].displayName} · Standard rate · INR per night</p></div><div className="hidden gap-3 text-xs text-[var(--color-admin-sage)] sm:flex"><span className="flex items-center gap-1"><Check size={13} className="text-green-700" /> Available</span><span className="flex items-center gap-1"><LockKeyhole size={13} className="text-red-700" /> Sold Off</span></div></div><div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">{days.map((day) => { const date = dateForDay(day); const state = dateState(date); return <button type="button" key={date} onClick={() => selectDate(date)} aria-label={`Manage ${date}`} className={`min-h-24 rounded-lg border p-3 text-left transition hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-terracotta)] ${state === 'available' ? 'border-green-200 bg-green-50/60' : state === 'sold-off' ? 'border-red-200 bg-red-50/60' : 'border-[var(--color-admin-mist)] bg-[var(--color-admin-mineral)]/30'}`}><p className="text-xs font-semibold text-[var(--color-admin-sage)]">{date}</p><p className={`mt-3 text-sm font-semibold ${state === 'available' ? 'text-green-800' : state === 'sold-off' ? 'text-red-800' : 'text-[var(--color-admin-sage)]'}`}>{state === 'sold-off' ? 'Sold Off' : state === 'available' ? formatAdminPrice(date) : 'No price'}</p></button>; })}</div>{selectedDate && <div className="mt-5 rounded-lg border border-[var(--color-admin-mist)] bg-[var(--color-admin-mineral)]/30 p-4" aria-label={`Actions for ${selectedDate}`}><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-admin-terracotta)]">Selected date</p><p className="mt-1 font-medium text-[var(--color-admin-forest)]">{selectedDate}</p><p className="mt-1 text-xs text-[var(--color-admin-sage)]">Sold Off takes precedence over any saved price.</p></div><div className="flex flex-col gap-3 sm:flex-row sm:items-end"><label className="text-sm font-medium text-[var(--color-admin-forest)]">Nightly price (INR)<input type="number" min="1" step="1" inputMode="decimal" value={selectedPrice} onChange={(event) => setSelectedPrice(event.target.value)} className="admin-input mt-2 w-full sm:w-36" placeholder="e.g. 25000" /></label><button type="button" className="admin-button admin-button--primary" onClick={() => void saveSingleAction('price')} disabled={status === 'saving'}>Set price</button><button type="button" className="admin-button" onClick={() => void saveSingleAction('sold-off')} disabled={status === 'saving'}>Mark Sold Off</button><button type="button" className="admin-button" onClick={() => void saveSingleAction('restore')} disabled={status === 'saving'}>Reverse Sold Off</button><button type="button" className="admin-button" onClick={() => setSelectedDate(null)} disabled={status === 'saving'}>Cancel</button></div></div></div>}</section>}
+    {data?.units[0] && <section className="rounded-xl border border-[var(--color-admin-mist)] bg-white p-5 shadow-sm"><div className="mb-4 flex items-end justify-between gap-4"><div><h3 className="font-semibold text-[var(--color-admin-forest)]">Current state · {monthLabel(month)}</h3><p className="mt-1 text-xs text-[var(--color-admin-sage)]">{data.units[0].displayName} · Standard rate · INR per night</p></div><div className="hidden gap-3 text-xs text-[var(--color-admin-sage)] sm:flex"><span className="flex items-center gap-1"><Check size={13} className="text-green-700" /> Available</span><span className="flex items-center gap-1"><LockKeyhole size={13} className="text-red-700" /> Sold Off</span></div></div><div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">{days.map((day) => { const date = dateForDay(day); const state = dateState(date); return <button type="button" key={date} onClick={() => selectDate(date)} aria-label={`Manage ${formatDateForDisplay(date)}`} className={`min-h-24 rounded-lg border p-3 text-left transition hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-[var(--color-admin-terracotta)] ${state === 'available' ? 'border-green-200 bg-green-50/60' : state === 'sold-off' ? 'border-red-200 bg-red-50/60' : 'border-[var(--color-admin-mist)] bg-[var(--color-admin-mineral)]/30'}`}><p className="text-xs font-semibold text-[var(--color-admin-sage)]">{formatDateForDisplay(date)}</p><p className={`mt-3 text-sm font-semibold ${state === 'available' ? 'text-green-800' : state === 'sold-off' ? 'text-red-800' : 'text-[var(--color-admin-sage)]'}`}>{state === 'sold-off' ? 'Sold Off' : state === 'available' ? formatAdminPrice(date) : 'No price'}</p></button>; })}</div>{selectedDate && <div className="mt-5 rounded-lg border border-[var(--color-admin-mist)] bg-[var(--color-admin-mineral)]/30 p-4" aria-label={`Actions for ${formatDateForDisplay(selectedDate)}`}><div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-admin-terracotta)]">Selected date</p><p className="mt-1 font-medium text-[var(--color-admin-forest)]">{formatDateForDisplay(selectedDate)}</p><p className="mt-1 text-xs text-[var(--color-admin-sage)]">Sold Off takes precedence over any saved price.</p></div><div className="flex flex-col gap-3 sm:flex-row sm:items-end"><label className="text-sm font-medium text-[var(--color-admin-forest)]">Nightly price (INR)<input type="number" min="1" step="1" inputMode="decimal" value={selectedPrice} onChange={(event) => setSelectedPrice(event.target.value)} className="admin-input mt-2 w-full sm:w-36" placeholder="e.g. 25000" /></label><button type="button" className="admin-button admin-button--primary" onClick={() => void saveSingleAction('price')} disabled={status === 'saving'}>Set price</button><button type="button" className="admin-button" onClick={() => void saveSingleAction('sold-off')} disabled={status === 'saving'}>Mark Sold Off</button><button type="button" className="admin-button" onClick={() => void saveSingleAction('restore')} disabled={status === 'saving'}>Reverse Sold Off</button><button type="button" className="admin-button" onClick={() => setSelectedDate(null)} disabled={status === 'saving'}>Cancel</button></div></div></div>}</section>}
   </div>;
 }

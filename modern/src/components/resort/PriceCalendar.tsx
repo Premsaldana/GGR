@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, CalendarDays, Check, LockKeyhole } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { formatPrice } from '@/lib/pricing-core';
+import { formatDateForDisplay, formatPrice } from '@/lib/pricing-core';
+import type { PricingEvent } from '@/lib/pricing-events';
 
 type Props = { initialMonth: string };
 type CalendarData = {
@@ -41,14 +42,37 @@ export function PriceCalendar({ initialMonth }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`/api/prices?month=${month}`, { cache: 'no-store' })
+    const refresh = () => fetch(`/api/prices?month=${month}`, { cache: 'no-store' })
       .then((response) => { if (!response.ok) throw new Error('Request failed'); return response.json() as Promise<CalendarData>; })
       .then((nextData) => { if (!cancelled) { setData(nextData); setStatus('ready'); setSelected(null); } })
       .catch(() => { if (!cancelled) setStatus('error'); });
+    void refresh();
+    const source = new EventSource('/api/prices/events');
+    let hasOpened = false;
+    source.onopen = () => {
+      if (hasOpened) void refresh();
+      hasOpened = true;
+    };
+    source.addEventListener('pricing', (event) => {
+      const pricingEvent = JSON.parse((event as MessageEvent<string>).data) as PricingEvent;
+      setData((current) => {
+        if (!current || current.units[0]?.id !== pricingEvent.unitId) return current;
+        const affected = new Set(pricingEvent.dates);
+        const prices = pricingEvent.action === 'price_updated'
+          ? [...current.prices.filter((price) => !affected.has(price.date)), ...pricingEvent.dates.map((date) => ({ id: pricingEvent.eventId + date, unitId: pricingEvent.unitId, date, amountMinorUnits: pricingEvent.amountMinorUnits ?? 0, currency: pricingEvent.currency ?? 'INR' }))]
+          : current.prices;
+        const availability = pricingEvent.action === 'sold_off'
+          ? [...current.availability.filter((item) => !affected.has(item.date)), ...pricingEvent.dates.map((date) => ({ id: pricingEvent.eventId + date, unitId: pricingEvent.unitId, date, status: 'sold_off', reason: null }))]
+          : pricingEvent.action === 'sold_off_reversed'
+            ? current.availability.filter((item) => !affected.has(item.date))
+            : current.availability;
+        return { ...current, prices, availability };
+      });
+    });
     const params = new URLSearchParams(searchParams.toString());
     params.set('month', month);
     router.replace(`/availability?${params.toString()}`, { scroll: false });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; source.close(); };
     // The URL is intentionally synchronized with the selected month only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [month]);
@@ -109,7 +133,7 @@ export function PriceCalendar({ initialMonth }: Props) {
             {cells.map((cell) => {
               const isSelected = cell.date === selected;
               const isAvailable = cell.state === 'available';
-              return <button key={cell.date} type="button" className={`availability-day availability-day--${cell.state}${isSelected ? ' availability-day--selected' : ''}`} onClick={() => isAvailable && setSelected(cell.date)} disabled={!isAvailable} aria-pressed={isSelected} aria-label={`${cell.date}: ${cell.state === 'available' ? cell.label : cell.state === 'sold-off' ? 'Sold Off' : 'No price configured'}`}>
+              return <button key={cell.date} type="button" className={`availability-day availability-day--${cell.state}${isSelected ? ' availability-day--selected' : ''}`} onClick={() => isAvailable && setSelected(cell.date)} disabled={!isAvailable} aria-pressed={isSelected} aria-label={`${formatDateForDisplay(cell.date)}: ${cell.state === 'available' ? cell.label : cell.state === 'sold-off' ? 'Sold Off' : 'No price configured'}`}>
                 <span className="availability-day__number">{cell.day}</span>
                 <span className="availability-day__status">{cell.state === 'available' ? <><Check size={13} aria-hidden="true" />{cell.label}</> : cell.state === 'sold-off' ? <><LockKeyhole size={13} aria-hidden="true" />Sold Off</> : 'No price'}</span>
               </button>;
@@ -119,7 +143,7 @@ export function PriceCalendar({ initialMonth }: Props) {
       )}
 
       <div className="availability-booking-bar">
-        <div><CalendarDays size={20} aria-hidden="true" /><p>{selectedCell ? `Selected: ${monthLabel(month)} ${selectedCell.day} · ${villa?.displayName}` : 'Select an available date to carry it into your enquiry.'}</p></div>
+        <div><CalendarDays size={20} aria-hidden="true" /><p>{selectedCell ? `Selected: ${formatDateForDisplay(selectedCell.date)} · ${villa?.displayName}` : 'Select an available date to carry it into your enquiry.'}</p></div>
         <button type="button" className="button button--sun availability-book-button" onClick={handleBookNow}>Book now</button>
       </div>
     </section>
