@@ -564,3 +564,52 @@ button { color: inherit; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
   .parallax-media__plane { transform: none !important; }
 }
+
+/* Read-only pricing calendar */
+.availability-page { min-height: 100svh; padding: 9rem var(--gutter) 6rem; background: var(--color-base-100); }
+.availability-page__intro, .availability-shell { width: min(100%, var(--max-content)); margin-inline: auto; }
+.availability-page__intro { max-width: 54rem; margin-bottom: 3rem; }
+.availability-page__intro h1 { margin-top: .7rem; font-family: var(--font-display); font-size: clamp(3rem, 7vw, 6rem); line-height: .95; font-weight: 600; }
+.availability-page__intro > p:last-child { max-width: 38rem; margin-top: 1.25rem; color: var(--color-text-body); font-size: 1.05rem; }
+.availability-shell { padding: clamp(1.25rem, 3vw, 2.5rem); background: var(--color-surface); border: 1px solid var(--color-border); box-shadow: var(--shadow-md); }
+.availability-toolbar { display: flex; justify-content: space-between; align-items: end; gap: 2rem; }
+.availability-toolbar h2 { margin-top: .55rem; font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3.5rem); line-height: 1; }
+.availability-lede { max-width: 34rem; margin-top: .75rem; color: var(--color-text-body); font-size: .9rem; }
+.availability-actions { display: flex; align-items: center; gap: .75rem; }
+.availability-icon-button { display: grid; width: 2.75rem; height: 2.75rem; place-items: center; border: 1px solid var(--color-border); background: var(--color-base-100); cursor: pointer; transition: background var(--duration-fast) var(--ease-default); }
+.availability-icon-button:hover { background: var(--color-base-200); }
+.availability-month { min-width: 9rem; text-align: center; font-family: var(--font-display); font-size: 1.45rem; font-weight: 600; }
+.availability-legend { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; margin: 2rem 0 1rem; color: var(--color-text-muted); font-size: .78rem; }
+.availability-legend span { display: inline-flex; align-items: center; gap: .45rem; }
+.availability-dot { width: .55rem; height: .55rem; border-radius: 50%; }
+.availability-dot--priced { background: var(--color-cta); }
+.availability-dot--empty { border: 1px solid var(--color-base-400); background: transparent; }
+.availability-table-wrap { overflow: auto; border: 1px solid var(--color-border); outline: none; }
+.availability-table-wrap:focus-visible { outline: 2px solid var(--focus-ring-color); outline-offset: 3px; }
+.availability-table { min-width: 56rem; width: 100%; border-collapse: collapse; table-layout: fixed; }
+.availability-table th, .availability-table td { border-right: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+.availability-table thead th { height: 2.8rem; color: var(--color-text-muted); background: var(--color-base-100); font-size: .72rem; font-weight: 600; }
+.availability-table tbody th { width: 10rem; padding: .75rem 1rem; text-align: left; background: var(--color-surface); font-size: .82rem; }
+.availability-table tbody th span, .availability-table tbody th small { display: block; }
+.availability-table tbody th small { margin-top: .2rem; color: var(--color-text-muted); font-size: .65rem; font-weight: 400; }
+.availability-sticky { position: sticky; left: 0; z-index: 2; }
+.availability-table thead .availability-sticky { z-index: 3; text-align: left; padding-left: 1rem; }
+.availability-table td { min-width: 3.5rem; padding: .25rem; text-align: center; background: var(--color-surface); }
+.availability-cell { display: grid; width: 100%; min-height: 3.25rem; place-items: center; padding: .25rem; border: 1px solid transparent; background: transparent; color: var(--color-text-muted); font-size: .68rem; cursor: pointer; }
+.availability-cell--priced { color: var(--color-cta); font-weight: 600; }
+.availability-cell--priced:hover { border-color: var(--color-cta); background: color-mix(in srgb, var(--color-cta) 8%, transparent); }
+.availability-cell--empty { cursor: not-allowed; opacity: .62; }
+.availability-state { margin-top: 1rem; padding: 2rem; border: 1px dashed var(--color-border); color: var(--color-text-muted); text-align: center; }
+.availability-state--error { display: flex; align-items: center; justify-content: center; gap: 1rem; color: var(--color-error); }
+.availability-state--error button { border-bottom: 1px solid currentColor; font-weight: 600; cursor: pointer; }
+.availability-booking-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--color-border); }
+.availability-booking-bar > div { display: flex; align-items: center; gap: .7rem; color: var(--color-text-body); font-size: .82rem; }
+.availability-book-button { min-width: 9rem; border: 0; }
+@media (max-width: 700px) {
+  .availability-page { padding-top: 7rem; }
+  .availability-toolbar { align-items: stretch; flex-direction: column; gap: 1.5rem; }
+  .availability-actions { justify-content: space-between; }
+  .availability-month { flex: 1; }
+  .availability-booking-bar { align-items: stretch; flex-direction: column; }
+  .availability-book-button { width: 100%; }
+}

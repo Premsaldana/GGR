@@ -1,7 +1,7 @@
 import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Calendar, LayoutDashboard, LogOut, FileText } from 'lucide-react';
+import { Calendar, LayoutDashboard, LogOut, FileText, Tag } from 'lucide-react';
 import { logout } from '@/app/admin/actions';
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
@@ -26,6 +26,9 @@ export default async function ProtectedLayout({ children }: { children: React.Re
           </Link>
           <Link href="/admin/calendar" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/10 transition text-sm">
             <Calendar size={18} /> Calendar
+          </Link>
+          <Link href="/admin/pricing" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/10 transition text-sm">
+            <Tag size={18} /> Room prices
           </Link>
           <Link href="/admin/invoices" className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-white/10 transition text-sm">
             <FileText size={18} /> Invoices

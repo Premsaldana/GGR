@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
@@ -28,6 +28,20 @@ export const units = sqliteTable('units', {
   defaultCheckInTime: text('default_check_in_time'),
   defaultCheckOutTime: text('default_check_out_time'),
 });
+
+export const roomPrices = sqliteTable('room_prices', {
+  id: text('id').primaryKey(),
+  unitId: text('unit_id').notNull().references(() => units.id),
+  rateCode: text('rate_code').notNull().default('standard'),
+  date: text('date').notNull(),
+  amountMinorUnits: integer('amount_minor_units').notNull(),
+  currency: text('currency').notNull().default('INR'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+}, (table) => ({
+  unitRateDateUnique: uniqueIndex('room_prices_unit_rate_date_unique').on(table.unitId, table.rateCode, table.date),
+  dateUnitIndex: index('room_prices_date_unit_idx').on(table.date, table.unitId),
+}));
 
 export const reservations = sqliteTable('reservations', {
   id: text('id').primaryKey(),

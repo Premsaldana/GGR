@@ -6,6 +6,7 @@ const navLinks = [
   { href: "/#resort", label: "The resort" },
   { href: "/#pool", label: "Private pool" },
   { href: "/#inside", label: "Inside" },
+  { href: "/availability", label: "Prices" },
 ];
 
 export function ResortHeader() {
@@ -42,7 +43,7 @@ export function ResortHeader() {
             {navLinks.map((link) => (
               <Link href={link.href} key={link.href}>{link.label}</Link>
             ))}
-            <Link href="/contact">Check availability</Link>
+            <Link href="/availability">Check availability</Link>
           </nav>
         </details>
       </div>

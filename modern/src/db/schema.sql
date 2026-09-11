@@ -26,6 +26,18 @@ CREATE TABLE IF NOT EXISTS units (
   default_check_in_time TEXT,
   default_check_out_time TEXT
 );
+CREATE TABLE IF NOT EXISTS room_prices (
+  id TEXT PRIMARY KEY NOT NULL,
+  unit_id TEXT NOT NULL REFERENCES units(id),
+  rate_code TEXT NOT NULL DEFAULT 'standard',
+  date TEXT NOT NULL,
+  amount_minor_units INTEGER NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'INR',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  UNIQUE (unit_id, rate_code, date)
+);
+CREATE INDEX IF NOT EXISTS room_prices_date_unit_idx ON room_prices(date, unit_id);
 CREATE TABLE IF NOT EXISTS reservations (
   id TEXT PRIMARY KEY NOT NULL,
   reservation_number TEXT NOT NULL UNIQUE,
