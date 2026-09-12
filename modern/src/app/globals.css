@@ -647,3 +647,14 @@ button { color: inherit; }
   .availability-day__status { flex-direction: column; align-items: flex-start; gap: .1rem; font-size: .62rem; }
   .availability-day--sold-off .availability-day__status { font-size: .55rem; }
 }
+
+/* Responsive behavior for existing admin controls and single-villa calendar. */
+@media (max-width: 767px) {
+  .admin-pricing-available-card, .admin-pricing-available-text { min-width: 0; }
+  .admin-input, .admin-button { min-height: 2.75rem; }
+  .availability-shell { overflow: visible; }
+}
+@media (max-width: 640px) {
+  .availability-day__number { font-size: .72rem; }
+  .availability-day__status { max-width: 100%; overflow-wrap: anywhere; }
+}

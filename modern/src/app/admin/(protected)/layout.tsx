@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Calendar, LayoutDashboard, LogOut, FileText, Tag } from 'lucide-react';
 import { logout } from '@/app/admin/actions';
+import AdminMobileNav from '@/app/admin/components/AdminMobileNav';
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -47,13 +48,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto relative">
-        {/* Mobile Header (simplified) */}
-        <header className="md:hidden bg-[var(--color-admin-botanical)] text-[var(--color-admin-shell)] p-4 flex justify-between items-center">
-          <h1 className="font-[var(--font-display)] text-lg">GGR Admin</h1>
-          <form action={logout}>
-            <button type="submit" className="text-sm text-white/80 hover:text-white transition">Logout</button>
-          </form>
-        </header>
+        <AdminMobileNav email={session.email} />
 
         <div className="p-4 md:p-8 max-w-7xl mx-auto h-full relative">
           {children}
