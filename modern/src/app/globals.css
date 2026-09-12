@@ -658,3 +658,53 @@ button { color: inherit; }
   .availability-day__number { font-size: .72rem; }
   .availability-day__status { max-width: 100%; overflow-wrap: anywhere; }
 }
+
+/* Calendar refinement: preserve the existing information architecture while giving each state room to breathe. */
+.availability-shell { padding: clamp(1.5rem, 3.5vw, 3rem); }
+.availability-toolbar { padding-bottom: 1.5rem; border-bottom: 1px solid color-mix(in srgb, var(--color-border) 78%, transparent); }
+.availability-toolbar h2 { letter-spacing: -.025em; }
+.availability-actions { flex-shrink: 0; padding: .35rem; border: 1px solid var(--color-border); background: color-mix(in srgb, var(--color-base-100) 72%, transparent); }
+.availability-icon-button { border: 0; background: transparent; }
+.availability-icon-button:hover { background: var(--color-surface); }
+.availability-month { padding-inline: .5rem; }
+.availability-legend { margin: 1.25rem 0 1.5rem; gap: .7rem 1.4rem; }
+.availability-legend span { min-height: 1.75rem; }
+.availability-calendar { border-color: color-mix(in srgb, var(--color-border) 85%, var(--color-base-300)); border-radius: .5rem; overflow: hidden; }
+.availability-weekdays span { padding: .9rem .5rem; background: var(--color-base-100); }
+.availability-grid { gap: 0; background: var(--color-border); }
+.availability-day { min-height: 6.75rem; margin: 1px; padding: .85rem; background: var(--color-surface); }
+.availability-day__number { color: var(--color-text-primary); font-size: .78rem; letter-spacing: .03em; }
+.availability-day__status { min-height: 1.65rem; font-size: clamp(.68rem, 1.05vw, .8rem); }
+.availability-day--available .availability-day__status { letter-spacing: -.01em; }
+.availability-day--sold-off { margin: 1px; }
+.availability-booking-bar { margin-top: 1.5rem; padding-top: 1.5rem; }
+.availability-booking-bar > div { min-height: 2.75rem; }
+
+.pricing-editor { max-width: 82rem; margin-inline: auto; }
+.pricing-range-card, .pricing-state-card { overflow: visible; }
+.pricing-range-card > div:first-child { padding-bottom: .25rem; }
+.pricing-state-card > div:first-child { padding-bottom: .25rem; }
+.pricing-selected-actions { border-left: 3px solid var(--color-admin-terracotta); }
+
+@media (max-width: 767px) {
+  .availability-toolbar { gap: 1.25rem; }
+  .availability-actions { align-self: stretch; justify-content: space-between; }
+  .availability-month { flex: 1; }
+  .pricing-range-card, .pricing-state-card { padding: 1rem; }
+  .pricing-state-card > div:first-child { align-items: flex-start; flex-direction: column; gap: .75rem; }
+  .pricing-state-card .grid { gap: .5rem; }
+  .pricing-selected-actions { padding: 1rem; }
+}
+
+@media (max-width: 480px) {
+  .availability-shell { padding: 1rem; }
+  .availability-toolbar { padding-bottom: 1rem; }
+  .availability-toolbar h2 { font-size: 2rem; }
+  .availability-lede { font-size: .82rem; }
+  .availability-weekdays span { padding: .7rem .2rem; font-size: .55rem; }
+  .availability-day, .availability-day--sold-off { min-height: 5.75rem; padding: .55rem .4rem; }
+  .availability-day__status { font-size: .6rem; }
+  .availability-booking-bar { gap: .75rem; margin-top: 1rem; padding-top: 1rem; }
+  .availability-booking-bar > div { align-items: flex-start; font-size: .75rem; }
+  .pricing-state-card .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
