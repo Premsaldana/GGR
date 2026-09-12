@@ -565,7 +565,7 @@ button { color: inherit; }
   .parallax-media__plane { transform: none !important; }
 }
 
-/* Admin Pricing only: configured-price state. Kept separate from guest availability styles. */
+/* Configured-price state: shared by the admin and guest pricing calendars. */
 .admin-pricing-available-card { border-color: #bbf7d0; background: #f0fdf4; }
 .admin-pricing-available-text { color: #166534; }
 
@@ -586,7 +586,7 @@ button { color: inherit; }
 .availability-legend { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; margin: 2rem 0 1rem; color: var(--color-text-muted); font-size: .78rem; }
 .availability-legend span { display: inline-flex; align-items: center; gap: .45rem; }
 .availability-dot { width: .55rem; height: .55rem; border-radius: 50%; }
-.availability-dot--priced { background: var(--color-cta); }
+.availability-dot--priced { background: var(--color-success); }
 .availability-dot--empty { border: 1px solid var(--color-base-400); background: transparent; }
 .availability-table-wrap { overflow: auto; border: 1px solid var(--color-border); outline: none; }
 .availability-table-wrap:focus-visible { outline: 2px solid var(--focus-ring-color); outline-offset: 3px; }
@@ -632,7 +632,7 @@ button { color: inherit; }
 .availability-day:focus-visible { position: relative; z-index: 1; outline: 2px solid var(--focus-ring-color); outline-offset: -2px; }
 .availability-day__number { font-size: .8rem; font-weight: 600; }
 .availability-day__status { display: inline-flex; min-height: 1.4rem; align-items: center; gap: .25rem; font-size: clamp(.62rem, 1.1vw, .78rem); line-height: 1.2; }
-.availability-day--available .availability-day__status { color: var(--color-cta); font-weight: 600; }
+.availability-day--available .availability-day__status { color: var(--color-success); font-weight: 600; }
 .availability-day--sold-off { background: color-mix(in srgb, var(--color-error) 6%, var(--color-surface)); color: var(--color-error); }
 .availability-day--sold-off .availability-day__status { font-weight: 600; }
 .availability-day--unpriced { color: var(--color-text-muted); }
