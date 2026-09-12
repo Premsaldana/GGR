@@ -57,3 +57,10 @@ export function parseDisplayDate(value: string) {
   const parsed = new Date(`${iso}T00:00:00Z`);
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === iso ? iso : null;
 }
+
+export function nextIsoDate(value: string) {
+  if (!isValidCalendarDate(value)) return null;
+  const next = new Date(`${value}T00:00:00Z`);
+  next.setUTCDate(next.getUTCDate() + 1);
+  return next.toISOString().slice(0, 10);
+}

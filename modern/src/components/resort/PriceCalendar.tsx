@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ArrowRight, CalendarDays, Check, LockKeyhole } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { formatDateForDisplay, formatPrice } from '@/lib/pricing-core';
+import { formatDateForDisplay, formatPrice, nextIsoDate } from '@/lib/pricing-core';
 import type { PricingEvent } from '@/lib/pricing-events';
 
 type Props = { initialMonth: string };
@@ -89,12 +89,15 @@ export function PriceCalendar({ initialMonth }: Props) {
   }), [month, priceMap, soldOffSet]);
   const leadingBlanks = useMemo(() => Array.from({ length: firstWeekday(month) }, (_, index) => index), [month]);
   const selectedCell = cells.find((cell) => cell.date === selected);
-  const bookingHref = `/contact?room=${encodeURIComponent(villa?.slug ?? 'private-pool-villa')}${selectedCell ? `&checkIn=${selectedCell.date}` : ''}`;
+  const selectedAvailableCell = selectedCell?.state === 'available' ? selectedCell : undefined;
+  const selectedCheckOut = selectedAvailableCell ? nextIsoDate(selectedAvailableCell.date) : null;
+  const bookingHref = selectedAvailableCell && selectedCheckOut ? `/contact?checkIn=${selectedAvailableCell.date}&checkOut=${selectedCheckOut}` : '/contact';
 
   async function handleBookNow() {
+    if (!selectedAvailableCell || !selectedCheckOut) return;
     try {
       const { bookingProvider } = await import('@/integrations/booking/adapter');
-      const result = await bookingProvider.createBookingRedirect({ roomSlug: villa?.slug ?? 'private-pool-villa', checkIn: selectedCell?.date });
+      const result = await bookingProvider.createBookingRedirect({ roomSlug: villa?.slug ?? 'private-pool-villa', checkIn: selectedAvailableCell.date, checkOut: selectedCheckOut });
       router.push(result.url);
     } catch {
       router.push(bookingHref);

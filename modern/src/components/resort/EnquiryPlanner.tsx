@@ -2,9 +2,17 @@
 
 import { FormEvent } from "react";
 import { ArrowUpRight } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { siteConfig } from "@/content/site";
+import { dateSchema } from "@/lib/pricing-core";
 
 export function EnquiryPlanner() {
+  const searchParams = useSearchParams();
+  const checkInParam = searchParams.get("checkIn") || "";
+  const checkOutParam = searchParams.get("checkOut") || "";
+  const checkIn = dateSchema.safeParse(checkInParam).success ? checkInParam : "";
+  const checkOut = dateSchema.safeParse(checkOutParam).success ? checkOutParam : "";
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -41,11 +49,11 @@ export function EnquiryPlanner() {
       </div>
       <div className="enquiry-planner__field">
         <label htmlFor="checkIn">Check-in</label>
-        <input id="checkIn" name="checkIn" type="date" />
+        <input id="checkIn" name="checkIn" type="date" defaultValue={checkIn} />
       </div>
       <div className="enquiry-planner__field">
         <label htmlFor="checkOut">Check-out</label>
-        <input id="checkOut" name="checkOut" type="date" onChange={(event) => event.currentTarget.setCustomValidity("")} />
+        <input id="checkOut" name="checkOut" type="date" defaultValue={checkOut} onChange={(event) => event.currentTarget.setCustomValidity("")} />
       </div>
       <div className="enquiry-planner__field enquiry-planner__field--full">
         <label htmlFor="guests">Number of guests</label>
