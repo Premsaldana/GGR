@@ -4,11 +4,13 @@ import * as schema from './schema';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
+import { assertProviderMatchesUrl, getDatabaseProvider } from './runtime';
 
 const dbUrl = process.env.DATABASE_URL;
 if (!dbUrl) {
   throw new Error('DATABASE_URL environment variable is missing');
 }
+assertProviderMatchesUrl(getDatabaseProvider(), dbUrl);
 const dbPath = path.resolve(/*turbopackIgnore: true*/ process.cwd(), dbUrl);
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 const sqlite = new Database(dbPath);
