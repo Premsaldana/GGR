@@ -6,24 +6,24 @@ import { PRIVATE_POOL_VILLA } from '@/lib/units';
 
 export { CURRENCY, monthRange, normalizePricePayload, priceBatchSchema, priceInputSchema, validatePriceInput, formatPrice, RATE_CODE } from '@/lib/pricing-core';
 
-export function getPrivatePoolVilla() {
+export async function getPrivatePoolVilla() {
   return db.select({ id: units.id, slug: units.slug, displayName: units.displayName })
     .from(units)
     .where(and(eq(units.slug, PRIVATE_POOL_VILLA.slug), eq(units.active, true)))
     .get();
 }
 
-export function getActiveUnits() {
-  const villa = getPrivatePoolVilla();
+export async function getActiveUnits() {
+  const villa = await getPrivatePoolVilla();
   return villa ? [{ ...villa, displayName: PRIVATE_POOL_VILLA.displayName }] : [];
 }
 
-export function getMonthlyPrices(month: string) {
+export async function getMonthlyPrices(month: string) {
   const { start, end } = monthRange(month);
-  const villa = getPrivatePoolVilla();
+  const villa = await getPrivatePoolVilla();
   if (!villa) return { month, start, end, units: [], prices: [], availability: [] };
 
-  const prices = db.select({
+  const prices = (await db.select({
     id: roomPrices.id,
     unitId: roomPrices.unitId,
     rateCode: roomPrices.rateCode,
@@ -34,10 +34,10 @@ export function getMonthlyPrices(month: string) {
     .from(roomPrices)
     .where(and(eq(roomPrices.unitId, villa.id), gte(roomPrices.date, start), lte(roomPrices.date, end)))
     .orderBy(asc(roomPrices.date))
-    .all()
+    .all())
     .filter((price) => Number.isInteger(price.amountMinorUnits) && price.amountMinorUnits > 0);
 
-  const availability = db.select({
+  const availability = await db.select({
     id: roomAvailability.id,
     unitId: roomAvailability.unitId,
     date: roomAvailability.date,
@@ -52,9 +52,9 @@ export function getMonthlyPrices(month: string) {
   return { month, start, end, units: [{ ...villa, displayName: PRIVATE_POOL_VILLA.displayName }], prices, availability };
 }
 
-export function getPriceByKey(unitId: string, rateCode: string, date: string) {
+export async function getPriceByKey(unitId: string, rateCode: string, date: string) {
   return db.select().from(roomPrices).where(and(eq(roomPrices.unitId, unitId), eq(roomPrices.rateCode, rateCode), eq(roomPrices.date, date))).get();
 }
 
-export type MonthlyPrices = ReturnType<typeof getMonthlyPrices>;
+export type MonthlyPrices = Awaited<ReturnType<typeof getMonthlyPrices>>;
 export type PriceRecord = MonthlyPrices['prices'][number];

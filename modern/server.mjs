@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import next from 'next';
 import nextEnv from '@next/env';
 import Database from 'better-sqlite3';
+import { Pool } from 'pg';
 import { WebSocketServer } from 'ws';
 
 const { loadEnvConfig } = nextEnv;
@@ -14,13 +15,26 @@ const dev = process.env.NODE_ENV !== 'production';
 const hostname = process.env.HOSTNAME || '0.0.0.0';
 const port = Number(process.env.PORT || 3000);
 const dbUrl = process.env.DATABASE_URL;
+const provider = process.env.DATABASE_PROVIDER || 'sqlite';
 const sessionSecret = process.env.SESSION_SECRET;
 if (!dbUrl || !sessionSecret) throw new Error('DATABASE_URL and SESSION_SECRET are required');
-const dbPath = path.resolve(process.cwd(), dbUrl);
-fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-const db = new Database(dbPath);
-const schemaPath = path.resolve(process.cwd(), 'src', 'db', 'schema.sql');
-db.exec(fs.readFileSync(schemaPath, 'utf8'));
+if (provider !== 'sqlite' && provider !== 'postgres') throw new Error(`Unsupported DATABASE_PROVIDER: ${provider}`);
+
+let db;
+let pool;
+if (provider === 'postgres') {
+  pool = new Pool({ connectionString: dbUrl });
+  const schemaPath = path.resolve(process.cwd(), 'src', 'db', 'schema-postgres.sql');
+  await pool.query(fs.readFileSync(schemaPath, 'utf8'));
+} else {
+  const dbPath = path.resolve(process.cwd(), dbUrl);
+  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+  db = new Database(dbPath);
+  db.pragma('foreign_keys = ON');
+  const schemaPath = path.resolve(process.cwd(), 'src', 'db', 'schema.sql');
+  db.exec(fs.readFileSync(schemaPath, 'utf8'));
+}
+
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
 const wss = new WebSocketServer({ noServer: true });
@@ -41,28 +55,35 @@ function verifyToken(token) {
     const parsed = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
     if (!parsed.invoiceId || !parsed.role || parsed.exp * 1000 < Date.now()) return null;
     return parsed;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
-function getState(invoiceId, role) {
-  const proofs = db.prepare(`
-    SELECT id, invoice_id AS invoiceId, storage_key AS storageKey, mime_type AS mimeType,
-      status, submitted_at AS submittedAt, reviewed_at AS reviewedAt,
-      verified_amount_minor_units AS verifiedAmountMinorUnits, payment_mode AS paymentMode,
-      payment_reference AS paymentReference, admin_note AS adminNote, updated_at AS updatedAt
-    FROM payment_proofs WHERE invoice_id = ? ORDER BY submitted_at DESC
-  `).all(invoiceId);
-  const latest = db.prepare(`SELECT finalized_at AS finalizedAt, balance_minor_units AS balanceMinorUnits FROM invoices WHERE id = ?`).get(invoiceId);
+async function getState(invoiceId, role) {
+  let proofs;
+  let latest;
+  if (provider === 'postgres') {
+    const proofResult = await pool.query(`SELECT id, invoice_id AS "invoiceId", storage_key AS "storageKey", mime_type AS "mimeType",
+      status, submitted_at AS "submittedAt", reviewed_at AS "reviewedAt", verified_amount_minor_units AS "verifiedAmountMinorUnits",
+      payment_mode AS "paymentMode", payment_reference AS "paymentReference", admin_note AS "adminNote", updated_at AS "updatedAt"
+      FROM payment_proofs WHERE invoice_id = $1 ORDER BY submitted_at DESC`, [invoiceId]);
+    const latestResult = await pool.query('SELECT finalized_at AS "finalizedAt", balance_minor_units AS "balanceMinorUnits" FROM invoices WHERE id = $1', [invoiceId]);
+    proofs = proofResult.rows;
+    latest = latestResult.rows[0];
+  } else {
+    proofs = db.prepare(`SELECT id, invoice_id AS invoiceId, storage_key AS storageKey, mime_type AS mimeType,
+      status, submitted_at AS submittedAt, reviewed_at AS reviewedAt, verified_amount_minor_units AS verifiedAmountMinorUnits,
+      payment_mode AS paymentMode, payment_reference AS paymentReference, admin_note AS adminNote, updated_at AS updatedAt
+      FROM payment_proofs WHERE invoice_id = ? ORDER BY submitted_at DESC`).all(invoiceId);
+    latest = db.prepare('SELECT finalized_at AS finalizedAt, balance_minor_units AS balanceMinorUnits FROM invoices WHERE id = ?').get(invoiceId);
+  }
   return role === 'guest'
-    ? { isVerified: Boolean(latest && (latest.finalizedAt || latest.balanceMinorUnits <= 0) || proofs.some((proof) => proof.status === 'verified')), latestStatus: proofs[0]?.status || null }
+    ? { isVerified: Boolean((latest && (latest.finalizedAt || latest.balanceMinorUnits <= 0)) || proofs.some((proof) => proof.status === 'verified')), latestStatus: proofs[0]?.status || null }
     : { proofs, latest };
 }
 
-function sendState(socket, auth) {
+async function sendState(socket, auth) {
   if (socket.readyState !== socket.OPEN) return;
-  socket.send(JSON.stringify({ type: 'proof.state', invoiceId: auth.invoiceId, state: getState(auth.invoiceId, auth.role) }));
+  socket.send(JSON.stringify({ type: 'proof.state', invoiceId: auth.invoiceId, state: await getState(auth.invoiceId, auth.role) }));
 }
 
 function broadcast(event) {
@@ -70,9 +91,7 @@ function broadcast(event) {
   for (const subscriber of clients) {
     if (subscriber.socket.readyState !== subscriber.socket.OPEN) continue;
     const guestEvent = {
-      type: event.type,
-      invoiceId: event.invoiceId,
-      reservationId: event.reservationId,
+      type: event.type, invoiceId: event.invoiceId, reservationId: event.reservationId,
       proof: event.proof ? { id: event.proof.id, invoiceId: event.proof.invoiceId, status: event.proof.status, submittedAt: event.proof.submittedAt, reviewedAt: event.proof.reviewedAt, verifiedAmountMinorUnits: event.proof.verifiedAmountMinorUnits } : undefined,
       invoice: event.invoice ? { id: event.invoice.id, status: event.invoice.status, balanceMinorUnits: event.invoice.balanceMinorUnits, finalizedAt: event.invoice.finalizedAt } : undefined,
     };
@@ -85,11 +104,8 @@ wss.on('connection', (socket, request, auth) => {
   const subscriber = { socket, auth };
   clients.add(subscriber);
   subscribers.set(auth.invoiceId, clients);
-  sendState(socket, auth);
-  const cleanup = () => {
-    clients.delete(subscriber);
-    if (clients.size === 0) subscribers.delete(auth.invoiceId);
-  };
+  void sendState(socket, auth).catch((error) => socket.close(1011, error.message));
+  const cleanup = () => { clients.delete(subscriber); if (clients.size === 0) subscribers.delete(auth.invoiceId); };
   socket.on('close', cleanup);
   socket.on('error', cleanup);
 });
@@ -109,21 +125,13 @@ const upgradeHandler = app.getUpgradeHandler();
 const server = http.createServer(async (request, response) => {
   const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
   if (url.pathname === '/api/realtime/publish' && request.method === 'POST') {
-    if (!safeEqual(String(request.headers['x-realtime-secret'] || ''), sessionSecret)) {
-      response.writeHead(401, { 'content-type': 'application/json' });
-      response.end(JSON.stringify({ error: 'Unauthorized' }));
-      return;
-    }
+    if (!safeEqual(String(request.headers['x-realtime-secret'] || ''), sessionSecret)) { response.writeHead(401, { 'content-type': 'application/json' }); response.end(JSON.stringify({ error: 'Unauthorized' })); return; }
     try {
       const event = JSON.parse(await readBody(request));
       if (!event.invoiceId || !event.reservationId || !event.type) throw new Error('Invalid event');
       broadcast(event);
-      response.writeHead(202, { 'content-type': 'application/json' });
-      response.end(JSON.stringify({ accepted: true }));
-    } catch (error) {
-      response.writeHead(400, { 'content-type': 'application/json' });
-      response.end(JSON.stringify({ error: error.message || 'Invalid event' }));
-    }
+      response.writeHead(202, { 'content-type': 'application/json' }); response.end(JSON.stringify({ accepted: true }));
+    } catch (error) { response.writeHead(400, { 'content-type': 'application/json' }); response.end(JSON.stringify({ error: error.message || 'Invalid event' })); }
     return;
   }
   handle(request, response);
@@ -131,16 +139,10 @@ const server = http.createServer(async (request, response) => {
 
 server.on('upgrade', (request, socket, head) => {
   const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
-  if (url.pathname !== '/api/realtime') {
-    upgradeHandler(request, socket, head);
-    return;
-  }
+  if (url.pathname !== '/api/realtime') { upgradeHandler(request, socket, head); return; }
   const auth = verifyToken(url.searchParams.get('token'));
-  if (!auth) {
-    socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-    socket.destroy();
-    return;
-  }
+  if (!auth) { socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n'); socket.destroy(); return; }
   wss.handleUpgrade(request, socket, head, (ws) => wss.emit('connection', ws, request, auth));
 });
-server.listen(port, hostname, () => console.log(`> Ready on http://${hostname}:${port}`));
+
+server.listen(port, hostname, () => console.log(`> Ready on http://${hostname}:${port} (${provider})`));

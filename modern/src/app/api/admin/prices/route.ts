@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { db, databaseProvider, dbReady, postgresPool } from '@/db';
 import { auditEvents, roomAvailability, roomPrices } from '@/db/schema';
 import { getMonthlyPrices, getPrivatePoolVilla, CURRENCY, RATE_CODE } from '@/lib/pricing';
 import { dateSchema } from '@/lib/pricing-core';
@@ -45,8 +45,9 @@ function dateList(startDate: string, endDate: string) {
 export async function GET(request: NextRequest) {
   try {
     await requireAdmin();
+    await dbReady;
     const month = request.nextUrl.searchParams.get('month') ?? new Date().toISOString().slice(0, 7);
-    return NextResponse.json(getMonthlyPrices(month));
+    return NextResponse.json(await getMonthlyPrices(month));
   } catch (error) {
     if (error instanceof Error && ['UNAUTHORIZED', 'FORBIDDEN', 'MFA_REQUIRED', 'FORBIDDEN_EMAIL', 'UNAUTHORIZED_USER_ID'].some((value) => error.message.includes(value))) return authError(error);
     return NextResponse.json({ error: 'Unable to load prices.' }, { status: 400 });
@@ -62,10 +63,54 @@ export async function PUT(request: NextRequest) {
   }
 
   try {
+    await dbReady;
     const input = rangeSchema.parse(await request.json());
     const dates = dateList(input.startDate, input.endDate);
-    const villa = getPrivatePoolVilla();
+    const villa = await getPrivatePoolVilla();
     if (!villa) return NextResponse.json({ error: `${PRIVATE_POOL_VILLA.displayName} is not configured.` }, { status: 409 });
+
+    if (databaseProvider === 'postgres' && postgresPool) {
+      const client = await postgresPool.connect();
+      try {
+        await client.query('BEGIN');
+        const now = new Date();
+        for (const date of dates) {
+          if (input.amountMinorUnits !== undefined) {
+            await client.query(`INSERT INTO room_prices (id, unit_id, rate_code, date, amount_minor_units, currency, created_at, updated_at)
+              VALUES ($1,$2,$3,$4,$5,$6,$7,$7) ON CONFLICT (unit_id, rate_code, date)
+              DO UPDATE SET amount_minor_units = EXCLUDED.amount_minor_units, currency = EXCLUDED.currency, updated_at = EXCLUDED.updated_at`,
+              [crypto.randomUUID(), villa.id, RATE_CODE, date, input.amountMinorUnits, CURRENCY, now]);
+          }
+          if (input.soldOff === true) {
+            await client.query(`INSERT INTO room_availability (id, unit_id, date, status, reason, created_at, updated_at)
+              VALUES ($1,$2,$3,'sold_off',$4,$5,$5) ON CONFLICT (unit_id, date)
+              DO UPDATE SET status = 'sold_off', reason = EXCLUDED.reason, updated_at = EXCLUDED.updated_at`,
+              [crypto.randomUUID(), villa.id, date, input.reason || null, now]);
+          } else if (input.soldOff === false) {
+            await client.query('DELETE FROM room_availability WHERE unit_id = $1 AND date = $2', [villa.id, date]);
+          }
+        }
+        await client.query(`INSERT INTO audit_events (id, actor_user_id, entity_type, entity_id, event_type, after_json, request_id, created_at)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`, [crypto.randomUUID(), session.userId, 'private_pool_villa_calendar', villa.id,
+          input.soldOff === true ? 'sold_off' : input.soldOff === false ? 'sold_off_reversed' : 'price_range_update',
+          JSON.stringify({ ...input, dates: { start: input.startDate, end: input.endDate } }), request.headers.get('x-request-id'), now]);
+        await client.query('COMMIT');
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
+      const result = { updatedDates: dates.length, unit: { ...villa, displayName: PRIVATE_POOL_VILLA.displayName } };
+      publishPricingEvent({
+        eventId: crypto.randomUUID(),
+        action: input.amountMinorUnits !== undefined ? 'price_updated' : input.soldOff === true ? 'sold_off' : 'sold_off_reversed',
+        unitId: villa.id, dates, startDate: input.startDate, endDate: input.endDate,
+        ...(input.amountMinorUnits !== undefined ? { amountMinorUnits: input.amountMinorUnits, currency: CURRENCY } : {}),
+        soldOff: input.soldOff === true,
+      });
+      return NextResponse.json(result);
+    }
 
     const result = db.transaction((tx) => {
       const now = new Date();

@@ -8,6 +8,7 @@
     "start": "node server.mjs",
     "lint": "eslint",
     "test": "tsx src/__tests__/test-calendar.ts",
+    "test:all": "tsx src/__tests__/test-db-runtime.ts && tsx src/__tests__/test-pricing.ts && tsx src/__tests__/test-pricing-events.ts && tsx src/__tests__/test-invoice.ts && tsx src/__tests__/test-approved-invoice-flow.ts && tsx src/__tests__/test-payment.ts && tsx src/__tests__/test-dashboard.ts && tsx src/__tests__/test-qr.ts && tsx src/__tests__/test-upload.ts && tsx src/__tests__/test-fix-pass.ts",
     "seed": "tsx src/db/seed.ts"
   },
   "dependencies": {
