@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   description: 'View current room prices by date at Goa Garden Resort.',
 };
 
+import { Suspense } from 'react';
+
 export default function AvailabilityPage() {
   return (
     <main className="availability-page">
@@ -14,7 +16,9 @@ export default function AvailabilityPage() {
         <h1>Availability &amp; prices</h1>
         <p>Plan your stay with a clear view of current Private Pool Villa pricing. This calendar is read-only; booking continues through our existing enquiry flow.</p>
       </div>
-      <PriceCalendar initialMonth={new Date().toISOString().slice(0, 7)} />
+      <Suspense fallback={<div>Loading calendar...</div>}>
+        <PriceCalendar initialMonth={new Date().toISOString().slice(0, 7)} />
+      </Suspense>
     </main>
   );
 }

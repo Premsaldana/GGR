@@ -1,6 +1,5 @@
-import fs from 'fs';
-import path from 'path';
 import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
 
 export interface StorageAdapter {
   put(key: string, buffer: Buffer, mimeType: string): Promise<void>;
@@ -9,82 +8,52 @@ export interface StorageAdapter {
   delete(key: string): Promise<void>;
 }
 
-export class LocalStorageAdapter implements StorageAdapter {
-  private baseDir: string;
-
-  constructor() {
-    this.baseDir = path.join(process.cwd(), 'storage', 'proofs');
-    if (!fs.existsSync(this.baseDir)) {
-      fs.mkdirSync(this.baseDir, { recursive: true });
-    }
-  }
-
-  private getFilePath(key: string) {
-    return path.join(this.baseDir, key);
+export class SupabaseStorageAdapter implements StorageAdapter {
+  private get supabase() {
+    return createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SECRET_KEY!
+    );
   }
 
   async put(key: string, buffer: Buffer, mimeType: string): Promise<void> {
-    const filePath = this.getFilePath(key);
-    // Write both data and mimeType for local testing
-    await fs.promises.writeFile(filePath, buffer);
-    await fs.promises.writeFile(`${filePath}.mime`, mimeType);
+    const { error } = await this.supabase.storage
+      .from('payment-proofs')
+      .upload(key, buffer, {
+        contentType: mimeType,
+        upsert: true
+      });
+    if (error) throw error;
   }
 
   async get(key: string): Promise<{ buffer: Buffer; mimeType: string } | null> {
-    const filePath = this.getFilePath(key);
-    try {
-      const buffer = await fs.promises.readFile(filePath);
-      const mimeType = await fs.promises.readFile(`${filePath}.mime`, 'utf8');
-      return { buffer, mimeType };
-    } catch (err) {
-      return null;
-    }
+    const { data, error } = await this.supabase.storage
+      .from('payment-proofs')
+      .download(key);
+    
+    if (error || !data) return null;
+    
+    const buffer = Buffer.from(await data.arrayBuffer());
+    return { buffer, mimeType: data.type };
   }
 
   async head(key: string): Promise<{ size: number; mimeType: string } | null> {
-    const filePath = this.getFilePath(key);
-    try {
-      const stat = await fs.promises.stat(filePath);
-      const mimeType = await fs.promises.readFile(`${filePath}.mime`, 'utf8');
-      return { size: stat.size, mimeType };
-    } catch (err) {
-      return null;
-    }
+    const { data, error } = await this.supabase.storage
+      .from('payment-proofs')
+      .list('', { search: key, limit: 1 });
+      
+    if (error || !data || data.length === 0) return null;
+    
+    return { size: data[0].metadata?.size || 0, mimeType: data[0].metadata?.mimetype || 'application/octet-stream' };
   }
 
   async delete(key: string): Promise<void> {
-    const filePath = this.getFilePath(key);
-    try {
-      await fs.promises.unlink(filePath);
-      await fs.promises.unlink(`${filePath}.mime`);
-    } catch (err) {
-      // Ignore if missing
-    }
+    await this.supabase.storage.from('payment-proofs').remove([key]);
   }
 }
 
-export class S3StorageAdapter implements StorageAdapter {
-  async put(key: string, buffer: Buffer, mimeType: string): Promise<void> {
-    throw new Error('S3 adapter not implemented yet');
-  }
-
-  async get(key: string): Promise<{ buffer: Buffer; mimeType: string } | null> {
-    throw new Error('S3 adapter not implemented yet');
-  }
-
-  async head(key: string): Promise<{ size: number; mimeType: string } | null> {
-    throw new Error('S3 adapter not implemented yet');
-  }
-
-  async delete(key: string): Promise<void> {
-    throw new Error('S3 adapter not implemented yet');
-  }
-}
-
-// In production, we'd look at env vars to select the provider
-const isProd = process.env.NODE_ENV === 'production';
-export const paymentProofStorage = isProd ? new S3StorageAdapter() : new LocalStorageAdapter();
-export const paymentProofProvider = isProd ? 's3' : 'local';
+export const paymentProofStorage = new SupabaseStorageAdapter();
+export const paymentProofProvider = 'supabase';
 
 export function generateStorageKey(): string {
   return crypto.randomBytes(32).toString('hex');

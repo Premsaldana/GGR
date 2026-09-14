@@ -32,7 +32,7 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await verifyOtp(otp);
+      const res = await verifyOtp(otp, email);
       if (res?.error) setError(res.error);
       else router.push('/admin');
     } catch {
@@ -68,10 +68,10 @@ export default function LoginPage() {
 
         {step === 'otp' && (
           <form onSubmit={handleOtpSubmit} className="space-y-4">
-            <p className="text-sm text-[var(--color-admin-sage)] mb-4">Enter the 6-digit code sent to {email}.</p>
+            <p className="text-sm text-[var(--color-admin-sage)] mb-4">Enter the 8-digit code sent to {email}.</p>
             <div>
               <label className="block text-sm font-medium mb-1">Gmail Verification Code</label>
-              <input type="text" value={otp} onChange={(e) => setOtp(e.target.value)} required maxLength={6} inputMode="numeric" autoComplete="one-time-code" className="w-full px-3 py-2 border rounded-md tracking-widest text-center text-lg" placeholder="123456" />
+              <input type="text" value={otp} onChange={(e) => setOtp(e.target.value)} required maxLength={8} inputMode="numeric" autoComplete="one-time-code" className="w-full px-3 py-2 border rounded-md tracking-widest text-center text-lg" placeholder="12345678" />
             </div>
             <button type="submit" disabled={loading} className="w-full bg-[var(--color-admin-terracotta)] text-[var(--color-admin-shell)] py-2 rounded-md font-medium hover:bg-[var(--color-admin-danger)] transition">
               {loading ? 'Verifying...' : 'Sign In'}

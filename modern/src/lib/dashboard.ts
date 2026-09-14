@@ -55,8 +55,8 @@ export function getTodayInResortTimeZone(now: Date = new Date()): string {
   return localDate(now);
 }
 
-export function getDashboardReservationCounts(database: DashboardDatabase, today: string) {
-  const active = database.select().from(reservations).all().filter(activeReservation);
+export async function getDashboardReservationCounts(database: DashboardDatabase, today: string) {
+  const active = (await allRows<typeof reservations.$inferSelect>(database.select().from(reservations))).filter(activeReservation);
   return {
     arrivingToday: active.filter((reservation) => reservation.checkInDate === today).length,
     departingToday: active.filter((reservation) => reservation.checkOutDate === today).length,
@@ -129,7 +129,7 @@ export async function getDashboardMetrics(database: DashboardDatabase = applicat
   const occupiedUnitIds = new Set(currentOccupants.map((reservation) => reservation.unitId));
   const availableUnits = Math.max(0, activeUnits.length - occupiedUnitIds.size);
   const occupancyRate = activeUnits.length === 0 ? 0 : (occupiedUnitIds.size / activeUnits.length) * 100;
-  const reservationCounts = getDashboardReservationCounts(database, today);
+  const reservationCounts = await getDashboardReservationCounts(database, today);
 
   const trendDays = Array.from({ length: 14 }, (_, index) => addDays(today, index - 13));
   const revenueTrend = trendDays.map((date) => ({ date, amountMinorUnits: cashEvents.filter((event) => event.date === date).reduce((sum, event) => sum + event.amountMinorUnits, 0) }));

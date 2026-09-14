@@ -36,7 +36,7 @@ insert.run('departing', '2026-09-06', today, 'confirmed');
 insert.run('in-house', '2026-09-06', '2026-09-10', 'confirmed');
 insert.run('cancelled-arrival', today, '2026-09-10', 'cancelled');
 
-const counts = getDashboardReservationCounts(db as unknown as typeof import('../db').db, today);
+const counts = await getDashboardReservationCounts(db as unknown as typeof import('../db').db, today);
 if (counts.arrivingToday !== 1 || counts.departingToday !== 1 || counts.inHouseToday !== 1) {
   throw new Error(`Unexpected dashboard counts: ${JSON.stringify(counts)}`);
 }

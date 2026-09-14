@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -39,7 +40,9 @@ export default function ContactPage() {
           <h2 id="enquiry-title">Plan your private stay.</h2>
           <p>The complete five-bedroom resort is reserved as one stay for your group.</p>
         </div>
-        <EnquiryPlanner />
+        <Suspense fallback={<div>Loading form...</div>}>
+          <EnquiryPlanner />
+        </Suspense>
 
         <div className="contact-page__direct">
           <p className="eyebrow">Prefer to reach us directly?</p>

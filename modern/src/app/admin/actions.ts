@@ -1,138 +1,102 @@
 'use server';
 
-import { getSession } from '@/lib/session';
-import { db, databaseProvider, dbReady } from '@/db';
-import { users, authChallenges } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { createClient } from '@/lib/session';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import nodemailer from 'nodemailer';
-import crypto from 'crypto';
 
-const ALLOWED_EMAILS = ['goagardenresort@gmail.com', 'premsaldana0@gmail.com'];
-
-async function first<T>(query: unknown): Promise<T | undefined> {
-  const builder = query as { execute: () => Promise<unknown>; get: () => T | undefined };
-  if (databaseProvider === 'postgres') {
-    await dbReady;
-    return (await builder.execute() as T[])[0];
-  }
-  return builder.get();
-}
-
-function hashValue(val: string): string {
-  return crypto.createHash('sha256').update(val).digest('hex');
-}
-
-function getMailer() {
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, MAIL_FROM } = process.env;
-  if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASSWORD || !MAIL_FROM) {
-    throw new Error('SMTP environment variables are missing');
-  }
-  return {
-    transporter: nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: parseInt(SMTP_PORT, 10),
-      auth: { user: SMTP_USER, pass: SMTP_PASSWORD },
-    }),
-    from: MAIL_FROM,
-  };
+function getAdminSupabase() {
+  const cookieStore = cookies();
+  // We use the service_role key to bypass RLS when checking allowed_admins during login
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SECRET_KEY!,
+    {
+      cookies: {
+        getAll: () => [],
+        setAll: () => {},
+      }
+    }
+  );
 }
 
 export async function sendOtp(email: string) {
   const normalizedEmail = email.trim().toLowerCase();
+  
   try {
-    if (!ALLOWED_EMAILS.includes(normalizedEmail)) {
+    const adminSupabase = getAdminSupabase();
+    const { data: allowedAdmin, error: allowedError } = await adminSupabase
+      .from('allowed_admins')
+      .select('email')
+      .eq('email', normalizedEmail)
+      .single();
+
+    if (allowedError || !allowedAdmin) {
       return { error: 'Unauthorized email' };
     }
 
-    const session = await getSession();
-    if (session.challengeId) {
-      const existing = await first<typeof authChallenges.$inferSelect>(db.select().from(authChallenges).where(eq(authChallenges.id, session.challengeId)));
-      if (existing && Date.now() < existing.createdAt.getTime() + 60 * 1000) {
-        return { error: 'Please wait before requesting another code' };
+    const supabase = await createClient();
+    const { error } = await supabase.auth.signInWithOtp({
+      email: normalizedEmail,
+      options: {
+        shouldCreateUser: true,
       }
-    }
-
-    const { transporter, from } = getMailer();
-    let user = await first<typeof users.$inferSelect>(db.select().from(users).where(eq(users.email, normalizedEmail)));
-    if (!user) {
-      user = await first<typeof users.$inferSelect>(db.insert(users).values({
-        id: crypto.randomUUID(),
-        email: normalizedEmail,
-        role: 'owner_admin',
-        createdAt: new Date(),
-      }).returning());
-    }
-    if (!user) return { error: 'Unable to create admin user' };
-
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const challengeId = crypto.randomUUID();
-    await db.insert(authChallenges).values({
-      id: challengeId,
-      userId: user.id,
-      otpHash: hashValue(otpCode),
-      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-      attempts: 0,
-      consumed: false,
-      createdAt: new Date(),
     });
 
-    session.email = normalizedEmail;
-    session.challengeId = challengeId;
-    session.emailVerified = false;
-    session.isLoggedIn = false;
-    session.userId = undefined;
-    session.role = undefined;
-    await session.save();
-
-    await transporter.sendMail({
-      from,
-      to: normalizedEmail,
-      subject: 'Goa Garden Resort Admin - Login Code',
-      text: `Your admin login code is: ${otpCode}. It expires in 10 minutes.`,
-    });
+    if (error) {
+      console.error('Supabase OTP send failed:', error);
+      return { error: 'Could not send verification code.' };
+    }
 
     return { success: true };
   } catch (error) {
     console.error('Admin OTP request failed:', error);
-    return { error: 'We could not send the Gmail code. Please check the mail service configuration and try again.' };
+    return { error: 'An unexpected error occurred. Please try again.' };
   }
 }
 
-export async function verifyOtp(code: string) {
+export async function verifyOtp(code: string, email?: string) {
+  if (!email) return { error: 'Email is required' };
+  
   try {
-    const session = await getSession();
-    if (!session.challengeId || !session.email) return { error: 'Session expired' };
+    const supabase = await createClient();
+    
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: email.trim().toLowerCase(),
+      token: code,
+      type: 'email',
+    });
 
-    const challenge = await first<typeof authChallenges.$inferSelect>(db.select().from(authChallenges).where(eq(authChallenges.id, session.challengeId)));
-    if (!challenge) return { error: 'Challenge not found' };
-    if (challenge.consumed) return { error: 'OTP already used' };
-    if (Date.now() > challenge.expiresAt.getTime()) return { error: 'OTP expired' };
-    if (challenge.attempts >= 5) return { error: 'Too many attempts' };
+    if (error) {
+      console.error('Supabase OTP verify failed:', error);
+      return { error: 'Invalid or expired code' };
+    }
 
-    await db.update(authChallenges).set({ attempts: challenge.attempts + 1 }).where(eq(authChallenges.id, challenge.id));
-    if (challenge.otpHash !== hashValue(code)) return { error: 'Invalid OTP' };
+    if (data.user?.email) {
+      const { db } = await import('@/db');
+      const { users } = await import('@/db/schema');
+      const { eq } = await import('drizzle-orm');
+      
+      const existingUser = await db.select().from(users).where(eq(users.email, data.user.email)).limit(1).then(res => res[0]);
+      if (!existingUser) {
+        await db.insert(users).values({
+          id: data.user.id,
+          email: data.user.email,
+          role: 'owner_admin',
+          createdAt: new Date(),
+        });
+      }
+    }
 
-    await db.update(authChallenges).set({ consumed: true }).where(eq(authChallenges.id, challenge.id));
-    const user = await first<typeof users.$inferSelect>(db.select().from(users).where(eq(users.email, session.email)));
-    if (!user) return { error: 'User not found' };
-
-    session.challengeId = undefined;
-    session.emailVerified = true;
-    session.isLoggedIn = true;
-    session.userId = user.id;
-    session.role = user.role;
-    await session.save();
-
-    return { success: true, email: session.email };
+    return { success: true, email: data.user?.email };
   } catch (error) {
     console.error('Admin OTP verification failed:', error);
-    return { error: 'We could not verify the code. Please request a new Gmail code and try again.' };
+    return { error: 'We could not verify the code. Please try again.' };
   }
 }
 
 export async function logout() {
-  const session = await getSession();
-  session.destroy();
+  const supabase = await createClient();
+  await supabase.auth.signOut();
   redirect('/admin/login');
 }
