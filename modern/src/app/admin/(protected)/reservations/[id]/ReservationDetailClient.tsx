@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react';
 import { InvoicePreview } from '../../../components/InvoicePreview';
 import { issueInvoiceAction } from '../../calendar/actions';
 import { InvoiceCalculationResult } from '@/lib/invoice';
-import { verifyProofAction, rejectProofAction, finalizeInvoiceAction } from './actions';
+import { verifyProofAction, rejectProofAction, finalizeInvoiceAction, deleteReservationAction } from './actions';
 import { useProofRealtime } from '@/lib/useProofRealtime';
 
 type Props = {
@@ -23,6 +23,7 @@ export default function ReservationDetailClient({ reservation, lineItems, unit, 
   const [viewState, setViewState] = useState<'details' | 'preview' | 'proofs'>('details');
   const [isIssuing, setIsIssuing] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState('');
   
   // Proof action states
@@ -92,6 +93,19 @@ export default function ReservationDetailClient({ reservation, lineItems, unit, 
     setIsFinalizing(false);
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this reservation? All related data will be lost.')) return;
+    setIsDeleting(true);
+    setError('');
+    const res = await deleteReservationAction(reservation.id) as any;
+    if (res.error) {
+      setError(res.error);
+      setIsDeleting(false);
+    } else {
+      router.push('/admin/calendar');
+    }
+  };
+
   const invoiceToDisplay = issuedInvoice ? JSON.parse(issuedInvoice.snapshotJson) : null;
   const currentCalculation = issuedInvoice ? invoiceToDisplay.calculation : draftCalculation;
   const currentLineItems = issuedInvoice 
@@ -130,6 +144,13 @@ export default function ReservationDetailClient({ reservation, lineItems, unit, 
             className={`px-4 py-2 rounded-md text-sm ${viewState === 'proofs' ? 'bg-[var(--color-admin-mineral)] text-[#233B35] font-semibold' : 'bg-gray-100 text-gray-600'}`}
           >
             Proofs ({liveProofs.length})
+          </button>
+          <button 
+            onClick={handleDelete} 
+            disabled={isDeleting}
+            className="px-4 py-2 rounded-md text-sm bg-red-100 text-red-600 font-semibold hover:bg-red-200 transition"
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       </div>

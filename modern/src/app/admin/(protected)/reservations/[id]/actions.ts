@@ -171,3 +171,47 @@ export async function finalizeInvoiceAction(reservationId: string) {
     return { error: err.message || 'Failed to finalize invoice', success: false };
   }
 }
+
+export async function deleteReservationAction(reservationId: string) {
+  try {
+    const session = await requireAdmin();
+    let result;
+    const { shareLinks, qrPaymentArtifacts } = await import('@/db/schema');
+    if (provider === 'postgres') {
+      await dbReady;
+      result = await postgresDb.transaction(async (tx) => {
+        await tx.delete(reservationLineItems).where(eq(reservationLineItems.reservationId, reservationId)).execute();
+        const reservationInvoices = await tx.select().from(invoices).where(eq(invoices.reservationId, reservationId)).execute();
+        for (const inv of reservationInvoices) {
+          await tx.delete(invoicePayments).where(eq(invoicePayments.invoiceId, inv.id)).execute();
+          await tx.delete(paymentProofs).where(eq(paymentProofs.invoiceId, inv.id)).execute();
+          await tx.delete(shareLinks).where(eq(shareLinks.invoiceId, inv.id)).execute();
+          await tx.delete(qrPaymentArtifacts).where(eq(qrPaymentArtifacts.invoiceId, inv.id)).execute();
+        }
+        await tx.delete(invoices).where(eq(invoices.reservationId, reservationId)).execute();
+        await tx.delete(reservations).where(eq(reservations.id, reservationId)).execute();
+        await tx.insert(auditEvents).values({ id: crypto.randomUUID(), actorUserId: session.userId, entityType: 'reservation', entityId: reservationId, eventType: 'DELETE', createdAt: new Date() }).execute();
+        return { success: true };
+      });
+    } else {
+      result = db.transaction((tx) => {
+        tx.delete(reservationLineItems).where(eq(reservationLineItems.reservationId, reservationId)).run();
+        const reservationInvoices = tx.select().from(invoices).where(eq(invoices.reservationId, reservationId)).all();
+        for (const inv of reservationInvoices) {
+          tx.delete(invoicePayments).where(eq(invoicePayments.invoiceId, inv.id)).run();
+          tx.delete(paymentProofs).where(eq(paymentProofs.invoiceId, inv.id)).run();
+          tx.delete(shareLinks).where(eq(shareLinks.invoiceId, inv.id)).run();
+          tx.delete(qrPaymentArtifacts).where(eq(qrPaymentArtifacts.invoiceId, inv.id)).run();
+        }
+        tx.delete(invoices).where(eq(invoices.reservationId, reservationId)).run();
+        tx.delete(reservations).where(eq(reservations.id, reservationId)).run();
+        tx.insert(auditEvents).values({ id: crypto.randomUUID(), actorUserId: session.userId, entityType: 'reservation', entityId: reservationId, eventType: 'DELETE', createdAt: new Date() }).run();
+        return { success: true };
+      });
+    }
+    return result;
+  } catch (err: any) {
+    console.error('deleteReservationAction error:', err);
+    return { error: err.message || 'Failed to delete reservation', success: false };
+  }
+}
