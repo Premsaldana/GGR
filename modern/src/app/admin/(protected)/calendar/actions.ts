@@ -110,8 +110,7 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
   try {
     let result: { reservationId: string; reservationNumber: string } = { reservationId: '', reservationNumber: '' };
     if (databaseProvider === 'postgres') {
-    const result = await postgresDb.transaction(async (tx) => {
-
+    result = await postgresDb.transaction(async (tx) => {
       const unit = (await tx.select().from(units).where(and(eq(units.id, validData.unitId), eq(units.active, true))).execute())[0];
       if (!unit || !isAllowedUnit(unit)) {
         throw new Error('INVALID_UNIT');
@@ -269,7 +268,7 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
     });
     } else {
     // Synchronous transaction to prevent locking/concurrency issues
-    const result = db.transaction((tx) => {
+    result = db.transaction((tx) => {
       const unit = tx.select().from(units).where(and(eq(units.id, validData.unitId), eq(units.active, true))).get();
       if (!unit || !isAllowedUnit(unit)) {
         throw new Error('INVALID_UNIT');
