@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, LockKeyhole } from "lucide-react";
 import { siteConfig } from "@/content/site";
 import { useRef } from "react";
 
@@ -39,6 +39,9 @@ export function ResortHeader() {
                 <Link href={link.href}>{link.label}</Link>
               </li>
             ))}
+            <li>
+              <Link href="/admin" aria-label="Admin Portal" style={{ opacity: 0.5, display: 'flex', alignItems: 'center', height: '100%' }}><LockKeyhole size={14} /></Link>
+            </li>
           </ul>
         </nav>
 
@@ -54,6 +57,7 @@ export function ResortHeader() {
             {navLinks.map((link) => (
               <Link href={link.href} key={link.href} onClick={closeMenu}>{link.label}</Link>
             ))}
+            <Link href="/admin" onClick={closeMenu} style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '8px', opacity: 0.5, fontSize: '0.9rem', padding: '1rem' }}><LockKeyhole size={16} /> Admin Portal</Link>
           </nav>
         </details>
       </div>

@@ -46,7 +46,7 @@ export function ResortFooter() {
         </div>
       </div>
       <div className="resort-footer__legal">
-        <p>© {new Date().getFullYear()} {siteConfig.propertyName}</p>
+        <p>© {new Date().getFullYear()} {siteConfig.propertyName} <span style={{ margin: '0 8px', opacity: 0.3 }}>|</span> <Link href="/admin" style={{ opacity: 0.5 }} aria-label="Admin Portal">Admin</Link></p>
         <p>Made for unhurried days in South Goa.</p>
       </div>
     </footer>
