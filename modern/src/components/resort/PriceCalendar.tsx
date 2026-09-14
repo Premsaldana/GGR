@@ -94,7 +94,10 @@ export function PriceCalendar({ initialMonth }: Props) {
   const bookingHref = selectedAvailableCell && selectedCheckOut ? `/contact?checkIn=${selectedAvailableCell.date}&checkOut=${selectedCheckOut}` : '/contact';
 
   async function handleBookNow() {
-    if (!selectedAvailableCell || !selectedCheckOut) return;
+    if (!selectedAvailableCell || !selectedCheckOut) {
+      router.push('/contact');
+      return;
+    }
     try {
       const { bookingProvider } = await import('@/integrations/booking/adapter');
       const result = await bookingProvider.createBookingRedirect({ roomSlug: villa?.slug ?? 'private-pool-villa', checkIn: selectedAvailableCell.date, checkOut: selectedCheckOut });
