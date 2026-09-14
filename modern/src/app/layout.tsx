@@ -51,10 +51,12 @@ export const metadata: Metadata = {
     title: "Goa Garden Resort — Your Private Resort in Colva",
     description:
       "Take over an entire five-bedroom resort in Colva, South Goa, with a private pool and tropical garden.",
+    images: [{ url: "https://goagardenresort.vercel.app/opengraph-image.jpg", width: 1200, height: 630, alt: "Goa Garden Resort — Private Pool Villa in Colva, Goa" }],
     locale: "en_IN",
   },
   twitter: {
     card: "summary_large_image",
+    images: ["https://goagardenresort.vercel.app/opengraph-image.jpg"],
   },
   robots: {
     index: true,
