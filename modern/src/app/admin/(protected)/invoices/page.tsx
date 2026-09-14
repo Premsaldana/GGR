@@ -1,21 +1,14 @@
-import { db } from '@/db';
+import { db, databaseProvider, dbReady } from '@/db';
 import { invoices, reservations, units, guests } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import InvoiceTableClient from './InvoiceTableClient';
 
 export default async function InvoicesPage() {
-  const rows = await db.select({
-    invoice: invoices,
-    reservation: reservations,
-    guest: guests,
-    unit: units,
-  })
-    .from(invoices)
-    .innerJoin(reservations, eq(invoices.reservationId, reservations.id))
-    .innerJoin(guests, eq(reservations.guestId, guests.id))
-    .innerJoin(units, eq(reservations.unitId, units.id))
-    .orderBy(desc(invoices.createdAt))
-    .all();
+  const rowsQuery = db.select({ invoice: invoices, reservation: reservations, guest: guests, unit: units })
+    .from(invoices).innerJoin(reservations, eq(invoices.reservationId, reservations.id))
+    .innerJoin(guests, eq(reservations.guestId, guests.id)).innerJoin(units, eq(reservations.unitId, units.id))
+    .orderBy(desc(invoices.createdAt));
+  const rows = databaseProvider === 'postgres' ? (await dbReady, await rowsQuery.execute()) : rowsQuery.all();
 
   return (
     <div className="h-full flex flex-col">

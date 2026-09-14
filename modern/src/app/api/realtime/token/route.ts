@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { db } from '@/db';
+import { db, databaseProvider, dbReady } from '@/db';
 import { invoices, shareLinks } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { getSession } from '@/lib/session';
@@ -19,7 +19,8 @@ export async function GET(request: NextRequest) {
   let role: 'admin' | 'guest';
   if (shareToken) {
     const tokenHash = crypto.createHash('sha256').update(shareToken).digest('hex');
-    const link = db.select().from(shareLinks).where(eq(shareLinks.token, tokenHash)).get();
+    const linkQuery = db.select().from(shareLinks).where(eq(shareLinks.token, tokenHash));
+    const link = databaseProvider === 'postgres' ? (await dbReady, (await linkQuery.execute())[0]) : linkQuery.get();
     if (!link || link.invoiceId !== invoiceId || new Date(link.expiresAt) < new Date()) {
       return NextResponse.json({ error: 'Invalid share token' }, { status: 401 });
     }
@@ -32,7 +33,8 @@ export async function GET(request: NextRequest) {
     role = 'admin';
   }
 
-  const invoice = db.select({ id: invoices.id }).from(invoices).where(eq(invoices.id, invoiceId)).get();
+  const invoiceQuery = db.select({ id: invoices.id }).from(invoices).where(eq(invoices.id, invoiceId));
+  const invoice = databaseProvider === 'postgres' ? (await dbReady, (await invoiceQuery.execute())[0]) : invoiceQuery.get();
   if (!invoice) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
 
   const exp = Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS;

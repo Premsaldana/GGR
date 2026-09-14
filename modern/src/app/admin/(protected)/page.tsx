@@ -11,8 +11,8 @@ function MetricCard({ label, value, detail, tone = 'default' }: { label: string;
   return <div className="bg-white border border-[var(--color-admin-mist)] rounded-xl p-5 shadow-sm min-h-[132px]"><p className="text-[11px] font-semibold text-[var(--color-admin-sage)] uppercase tracking-wider">{label}</p><p className={`text-2xl font-[var(--font-display)] font-semibold mt-3 ${toneClass}`}>{value}</p><p className="text-xs text-[var(--color-admin-sage)] mt-1">{detail}</p></div>;
 }
 
-export default function DashboardPage() {
-  const metrics = getDashboardMetrics(db);
+export default async function DashboardPage() {
+  const metrics = await getDashboardMetrics(db);
   const { financial, operations } = metrics;
   const activities = [
     ...metrics.recentReservations.map(({ reservation, guest, unit }) => ({ id: `reservation-${reservation.id}`, label: `Reservation ${reservation.reservationNumber}`, detail: `${guest.fullName} · ${getCanonicalRoomType(unit) || unit.displayName} · ${reservation.bookingStatus}`, timestamp: reservation.updatedAt })),

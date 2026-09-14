@@ -1,4 +1,4 @@
-import { db as applicationDb } from '@/db';
+import { db as applicationDb, databaseProvider, dbReady } from '@/db';
 import { ALLOWED_UNITS, getCanonicalRoomType, isAllowedUnit } from './units';
 import { guests, invoicePayments, invoices, reservations, units } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -6,6 +6,16 @@ import { eq } from 'drizzle-orm';
 export const RESORT_TIME_ZONE = 'Asia/Kolkata';
 type DashboardDatabase = typeof applicationDb;
 type DateLike = Date | number | string;
+type RecentReservation = { reservation: typeof reservations.$inferSelect; guest: typeof guests.$inferSelect; unit: typeof units.$inferSelect };
+
+async function allRows<T>(query: unknown): Promise<T[]> {
+  const builder = query as { execute: () => Promise<unknown>; all: () => T[] };
+  if (databaseProvider === 'postgres') {
+    await dbReady;
+    return await builder.execute() as T[];
+  }
+  return builder.all();
+}
 
 function asDate(value: DateLike | null | undefined) {
   if (value instanceof Date) return value;
@@ -54,15 +64,15 @@ export function getDashboardReservationCounts(database: DashboardDatabase, today
   };
 }
 
-export function getDashboardMetrics(database: DashboardDatabase = applicationDb, now: Date = new Date()) {
+export async function getDashboardMetrics(database: DashboardDatabase = applicationDb, now: Date = new Date()) {
   const today = getTodayInResortTimeZone(now);
   const currentMonth = monthKey(now);
   const previousMonth = previousMonthKey(today);
-  const activeUnits = database.select().from(units).all().filter((unit) => unit.active !== false && isAllowedUnit(unit));
-  const allReservations = database.select().from(reservations).all();
+  const activeUnits = (await allRows<typeof units.$inferSelect>(database.select().from(units))).filter((unit) => unit.active !== false && isAllowedUnit(unit));
+  const allReservations = await allRows<typeof reservations.$inferSelect>(database.select().from(reservations));
   const activeReservations = allReservations.filter(activeReservation);
-  const allInvoices = database.select().from(invoices).all();
-  const allPayments = database.select().from(invoicePayments).all().filter((payment) => payment.paymentStatus === 'completed');
+  const allInvoices = await allRows<typeof invoices.$inferSelect>(database.select().from(invoices));
+  const allPayments = (await allRows<typeof invoicePayments.$inferSelect>(database.select().from(invoicePayments))).filter((payment) => payment.paymentStatus === 'completed');
   const reservationById = new Map(allReservations.map((reservation) => [reservation.id, reservation]));
   const invoiceById = new Map(allInvoices.map((invoice) => [invoice.id, invoice]));
   const latestInvoiceByReservation = new Map<string, typeof invoices.$inferSelect>();
@@ -161,15 +171,15 @@ export function getDashboardMetrics(database: DashboardDatabase = applicationDb,
     };
   });
 
-  const recentReservations = database.select({ reservation: reservations, guest: guests, unit: units })
+  const recentReservations = (await allRows<RecentReservation>(database.select({ reservation: reservations, guest: guests, unit: units })
     .from(reservations)
     .innerJoin(guests, eq(reservations.guestId, guests.id))
     .innerJoin(units, eq(reservations.unitId, units.id))
     .orderBy(reservations.updatedAt)
-    .all()
+    ))
     .sort((a, b) => asDate(b.reservation.updatedAt)!.getTime() - asDate(a.reservation.updatedAt)!.getTime())
     .slice(0, 8);
-  const recentInvoices = database.select().from(invoices).all().sort((a, b) => asDate(b.createdAt)!.getTime() - asDate(a.createdAt)!.getTime()).slice(0, 8);
+  const recentInvoices = (await allRows<typeof invoices.$inferSelect>(database.select().from(invoices))).sort((a, b) => asDate(b.createdAt)!.getTime() - asDate(a.createdAt)!.getTime()).slice(0, 8);
 
   return {
     today,

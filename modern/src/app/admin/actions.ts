@@ -1,7 +1,7 @@
 'use server';
 
 import { getSession } from '@/lib/session';
-import { db } from '@/db';
+import { db, databaseProvider, dbReady } from '@/db';
 import { users, authChallenges } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
@@ -9,6 +9,15 @@ import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 
 const ALLOWED_EMAILS = ['goagardenresort@gmail.com', 'premsaldana0@gmail.com'];
+
+async function first<T>(query: unknown): Promise<T | undefined> {
+  const builder = query as { execute: () => Promise<unknown>; get: () => T | undefined };
+  if (databaseProvider === 'postgres') {
+    await dbReady;
+    return (await builder.execute() as T[])[0];
+  }
+  return builder.get();
+}
 
 function hashValue(val: string): string {
   return crypto.createHash('sha256').update(val).digest('hex');
@@ -38,22 +47,23 @@ export async function sendOtp(email: string) {
 
     const session = await getSession();
     if (session.challengeId) {
-      const existing = await db.select().from(authChallenges).where(eq(authChallenges.id, session.challengeId)).get();
+      const existing = await first<typeof authChallenges.$inferSelect>(db.select().from(authChallenges).where(eq(authChallenges.id, session.challengeId)));
       if (existing && Date.now() < existing.createdAt.getTime() + 60 * 1000) {
         return { error: 'Please wait before requesting another code' };
       }
     }
 
     const { transporter, from } = getMailer();
-    let user = await db.select().from(users).where(eq(users.email, normalizedEmail)).get();
+    let user = await first<typeof users.$inferSelect>(db.select().from(users).where(eq(users.email, normalizedEmail)));
     if (!user) {
-      user = await db.insert(users).values({
+      user = await first<typeof users.$inferSelect>(db.insert(users).values({
         id: crypto.randomUUID(),
         email: normalizedEmail,
         role: 'owner_admin',
         createdAt: new Date(),
-      }).returning().get();
+      }).returning());
     }
+    if (!user) return { error: 'Unable to create admin user' };
 
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const challengeId = crypto.randomUUID();
@@ -94,7 +104,7 @@ export async function verifyOtp(code: string) {
     const session = await getSession();
     if (!session.challengeId || !session.email) return { error: 'Session expired' };
 
-    const challenge = await db.select().from(authChallenges).where(eq(authChallenges.id, session.challengeId)).get();
+    const challenge = await first<typeof authChallenges.$inferSelect>(db.select().from(authChallenges).where(eq(authChallenges.id, session.challengeId)));
     if (!challenge) return { error: 'Challenge not found' };
     if (challenge.consumed) return { error: 'OTP already used' };
     if (Date.now() > challenge.expiresAt.getTime()) return { error: 'OTP expired' };
@@ -104,7 +114,7 @@ export async function verifyOtp(code: string) {
     if (challenge.otpHash !== hashValue(code)) return { error: 'Invalid OTP' };
 
     await db.update(authChallenges).set({ consumed: true }).where(eq(authChallenges.id, challenge.id));
-    const user = await db.select().from(users).where(eq(users.email, session.email)).get();
+    const user = await first<typeof users.$inferSelect>(db.select().from(users).where(eq(users.email, session.email)));
     if (!user) return { error: 'User not found' };
 
     session.challengeId = undefined;

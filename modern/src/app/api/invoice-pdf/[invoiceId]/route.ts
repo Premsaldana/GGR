@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { db, databaseProvider, dbReady } from '@/db';
 import { invoices, invoicePayments, qrPaymentArtifacts, reservations, guests, units } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { generateInvoicePDFStream } from '@/lib/pdfGenerator';
@@ -15,15 +15,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const { invoiceId } = await params;
 
   try {
-    const invoice = db.select().from(invoices).where(eq(invoices.id, invoiceId)).get();
+    const invoiceQuery = db.select().from(invoices).where(eq(invoices.id, invoiceId));
+    const invoice = databaseProvider === 'postgres' ? (await dbReady, (await invoiceQuery.execute())[0]) : invoiceQuery.get();
     if (!invoice) return new NextResponse('Not found', { status: 404 });
 
-    const reservation = db.select().from(reservations).where(eq(reservations.id, invoice.reservationId)).get();
+    const reservationQuery = db.select().from(reservations).where(eq(reservations.id, invoice.reservationId));
+    const reservation = databaseProvider === 'postgres' ? (await dbReady, (await reservationQuery.execute())[0]) : reservationQuery.get();
     if (!reservation) return new NextResponse('Reservation not found', { status: 404 });
-    const unit = db.select().from(units).where(eq(units.id, reservation.unitId)).get();
+    const unitQuery = db.select().from(units).where(eq(units.id, reservation.unitId));
+    const unit = databaseProvider === 'postgres' ? (await dbReady, (await unitQuery.execute())[0]) : unitQuery.get();
     const stayMetadata = getInvoiceStayMetadata(reservation, unit);
 
-    const guest = db.select().from(guests).where(eq(guests.id, reservation.guestId)).get();
+    const guestQuery = db.select().from(guests).where(eq(guests.id, reservation.guestId));
+    const guest = databaseProvider === 'postgres' ? (await dbReady, (await guestQuery.execute())[0]) : guestQuery.get();
     const guestSlug = guest ? guest.fullName.replace(/[^a-z0-9]/gi, '-').toLowerCase() : 'guest';
 
     let snapshot;
@@ -50,13 +54,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       snapshot = null;
     }
 
-    const payments = db.select().from(invoicePayments).where(eq(invoicePayments.invoiceId, invoiceId)).all();
+    const paymentsQuery = db.select().from(invoicePayments).where(eq(invoicePayments.invoiceId, invoiceId));
+    const payments = databaseProvider === 'postgres' ? (await dbReady, await paymentsQuery.execute()) : paymentsQuery.all();
     
-    const qrArtifact = db.select().from(qrPaymentArtifacts)
-      .where(eq(qrPaymentArtifacts.invoiceId, invoiceId))
-      .orderBy(desc(qrPaymentArtifacts.artifactVersion))
-      .limit(1)
-      .get();
+    const qrQuery = db.select().from(qrPaymentArtifacts).where(eq(qrPaymentArtifacts.invoiceId, invoiceId)).orderBy(desc(qrPaymentArtifacts.artifactVersion)).limit(1);
+    const qrArtifact = databaseProvider === 'postgres' ? (await dbReady, (await qrQuery.execute())[0]) : qrQuery.get();
 
     const pdfStream = await generateInvoicePDFStream(invoice, snapshot, payments, qrArtifact || null);
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
+import { db, databaseProvider, dbReady } from '@/db';
 import { invoices, invoicePayments, qrPaymentArtifacts, shareLinks, paymentProofs, reservations, guests } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import crypto from 'crypto';
@@ -10,7 +10,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   try {
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-    const shareLink = db.select().from(shareLinks).where(eq(shareLinks.token, tokenHash)).get();
+    const shareLinkQuery = db.select().from(shareLinks).where(eq(shareLinks.token, tokenHash));
+    const shareLink = databaseProvider === 'postgres' ? (await dbReady, (await shareLinkQuery.execute())[0]) : shareLinkQuery.get();
 
     if (!shareLink) {
       return new NextResponse('Invalid token', { status: 404 });
@@ -20,26 +21,27 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return new NextResponse('Token expired', { status: 403 });
     }
 
-    const invoice = db.select().from(invoices).where(eq(invoices.id, shareLink.invoiceId)).get();
+    const invoiceQuery = db.select().from(invoices).where(eq(invoices.id, shareLink.invoiceId));
+    const invoice = databaseProvider === 'postgres' ? (await dbReady, (await invoiceQuery.execute())[0]) : invoiceQuery.get();
     if (!invoice) return new NextResponse('Invoice not found', { status: 404 });
 
     const isFinalized = invoice.finalizedAt !== null;
     const isPaid = invoice.status === 'paid' || invoice.balanceMinorUnits <= 0;
     
     // Check if there's a verified proof
-    const verifiedProof = db.select().from(paymentProofs)
-      .where(eq(paymentProofs.invoiceId, invoice.id))
-      .all()
-      .find(p => p.status === 'verified');
+    const verifiedQuery = db.select().from(paymentProofs).where(eq(paymentProofs.invoiceId, invoice.id));
+    const verifiedProof = (databaseProvider === 'postgres' ? (await dbReady, await verifiedQuery.execute()) : verifiedQuery.all()).find(p => p.status === 'verified');
 
     if (!isFinalized && !isPaid && !verifiedProof) {
       return new NextResponse('Invoice not yet verified for download', { status: 403 });
     }
 
-    const reservation = db.select().from(reservations).where(eq(reservations.id, invoice.reservationId)).get();
+    const reservationQuery = db.select().from(reservations).where(eq(reservations.id, invoice.reservationId));
+    const reservation = databaseProvider === 'postgres' ? (await dbReady, (await reservationQuery.execute())[0]) : reservationQuery.get();
     if (!reservation) return new NextResponse('Reservation not found', { status: 404 });
 
-    const guest = db.select().from(guests).where(eq(guests.id, reservation.guestId)).get();
+    const guestQuery = db.select().from(guests).where(eq(guests.id, reservation.guestId));
+    const guest = databaseProvider === 'postgres' ? (await dbReady, (await guestQuery.execute())[0]) : guestQuery.get();
     const guestSlug = guest ? guest.fullName.replace(/[^a-z0-9]/gi, '-').toLowerCase() : 'guest';
 
     let snapshot;
@@ -55,13 +57,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       snapshot = null;
     }
 
-    const payments = db.select().from(invoicePayments).where(eq(invoicePayments.invoiceId, invoice.id)).all();
+    const paymentsQuery = db.select().from(invoicePayments).where(eq(invoicePayments.invoiceId, invoice.id));
+    const payments = databaseProvider === 'postgres' ? (await dbReady, await paymentsQuery.execute()) : paymentsQuery.all();
     
-    const qrArtifact = db.select().from(qrPaymentArtifacts)
-      .where(eq(qrPaymentArtifacts.invoiceId, invoice.id))
-      .orderBy(desc(qrPaymentArtifacts.artifactVersion))
-      .limit(1)
-      .get();
+    const qrQuery = db.select().from(qrPaymentArtifacts).where(eq(qrPaymentArtifacts.invoiceId, invoice.id)).orderBy(desc(qrPaymentArtifacts.artifactVersion)).limit(1);
+    const qrArtifact = databaseProvider === 'postgres' ? (await dbReady, (await qrQuery.execute())[0]) : qrQuery.get();
 
     const pdfStream = await generateInvoicePDFStream(invoice, snapshot, payments, qrArtifact || null);
 

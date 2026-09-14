@@ -1,6 +1,6 @@
 'use server';
 
-import { db } from '@/db';
+import { db, databaseProvider, dbReady } from '@/db';
 import { shareLinks, invoices, paymentProofs, reservations } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
@@ -43,7 +43,8 @@ export async function uploadProofAction(formData: FormData) {
 
     // Token validation
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-    const shareLink = db.select().from(shareLinks).where(eq(shareLinks.token, tokenHash)).get();
+    const shareLinkQuery = db.select().from(shareLinks).where(eq(shareLinks.token, tokenHash));
+    const shareLink = databaseProvider === 'postgres' ? (await dbReady, (await shareLinkQuery.execute())[0]) : shareLinkQuery.get();
 
     if (!shareLink) {
       return { error: 'Invalid token', success: false };
@@ -53,12 +54,14 @@ export async function uploadProofAction(formData: FormData) {
       return { error: 'Token expired', success: false };
     }
 
-    const invoice = db.select().from(invoices).where(eq(invoices.id, shareLink.invoiceId)).get();
+    const invoiceQuery = db.select().from(invoices).where(eq(invoices.id, shareLink.invoiceId));
+    const invoice = databaseProvider === 'postgres' ? (await dbReady, (await invoiceQuery.execute())[0]) : invoiceQuery.get();
     if (!invoice) {
       return { error: 'Invoice not found', success: false };
     }
 
-    const reservation = db.select().from(reservations).where(eq(reservations.id, invoice.reservationId)).get();
+    const reservationQuery = db.select().from(reservations).where(eq(reservations.id, invoice.reservationId));
+    const reservation = databaseProvider === 'postgres' ? (await dbReady, (await reservationQuery.execute())[0]) : reservationQuery.get();
     if (!reservation) {
       return { error: 'Reservation not found', success: false };
     }
@@ -73,10 +76,8 @@ export async function uploadProofAction(formData: FormData) {
     }
 
     // Prevent duplicate pending uploads
-    const existingPending = db.select().from(paymentProofs)
-      .where(eq(paymentProofs.invoiceId, invoice.id))
-      .all()
-      .filter(p => p.status === 'pending_review');
+    const pendingQuery = db.select().from(paymentProofs).where(eq(paymentProofs.invoiceId, invoice.id));
+    const existingPending = (databaseProvider === 'postgres' ? (await dbReady, await pendingQuery.execute()) : pendingQuery.all()).filter(p => p.status === 'pending_review');
 
     if (existingPending.length > 0) {
       return { error: 'A payment proof is already pending review.', success: false };
@@ -88,7 +89,7 @@ export async function uploadProofAction(formData: FormData) {
     await paymentProofStorage.put(storageKey, buffer, detectedMime);
 
     const proofId = crypto.randomUUID();
-    db.insert(paymentProofs).values({
+    const insertProof = db.insert(paymentProofs).values({
       id: proofId,
       invoiceId: invoice.id,
       shareLinkId: shareLink.id,
@@ -100,9 +101,11 @@ export async function uploadProofAction(formData: FormData) {
       submittedAt: new Date(),
       createdAt: new Date(),
       updatedAt: new Date()
-    }).run();
+    });
+    if (databaseProvider === 'postgres') { await dbReady; await insertProof.execute(); } else insertProof.run();
 
-    const proof = db.select().from(paymentProofs).where(eq(paymentProofs.id, proofId)).get();
+    const proofQuery = db.select().from(paymentProofs).where(eq(paymentProofs.id, proofId));
+    const proof = databaseProvider === 'postgres' ? (await dbReady, (await proofQuery.execute())[0]) : proofQuery.get();
     await publishRealtimeEvent({
       type: 'proof.submitted',
       invoiceId: invoice.id,

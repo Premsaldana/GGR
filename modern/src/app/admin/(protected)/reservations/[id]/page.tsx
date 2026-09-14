@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { db } from '@/db';
+import { db, databaseProvider, dbReady } from '@/db';
 import { reservations, units, reservationLineItems, invoices, guests, paymentProofs } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import ReservationDetailClient from './ReservationDetailClient';
@@ -11,21 +11,23 @@ export default async function ReservationDetailPage({ params }: { params: Promis
   await requireAdmin();
   const reservationId = (await params).id;
 
-  const reservation = await db.select().from(reservations).where(eq(reservations.id, reservationId)).get();
+  const reservationQuery = db.select().from(reservations).where(eq(reservations.id, reservationId));
+  const reservation = databaseProvider === 'postgres' ? (await dbReady, (await reservationQuery.execute())[0]) : reservationQuery.get();
   
   if (!reservation) {
     notFound();
   }
 
-  const guest = await db.select().from(guests).where(eq(guests.id, reservation.guestId)).get();
-  const unit = await db.select().from(units).where(eq(units.id, reservation.unitId)).get();
-  const lineItems = await db.select().from(reservationLineItems).where(eq(reservationLineItems.reservationId, reservationId)).all();
+  const guestQuery = db.select().from(guests).where(eq(guests.id, reservation.guestId));
+  const guest = databaseProvider === 'postgres' ? (await dbReady, (await guestQuery.execute())[0]) : guestQuery.get();
+  const unitQuery = db.select().from(units).where(eq(units.id, reservation.unitId));
+  const unit = databaseProvider === 'postgres' ? (await dbReady, (await unitQuery.execute())[0]) : unitQuery.get();
+  const lineItemsQuery = db.select().from(reservationLineItems).where(eq(reservationLineItems.reservationId, reservationId));
+  const lineItems = databaseProvider === 'postgres' ? (await dbReady, await lineItemsQuery.execute()) : lineItemsQuery.all();
   
   // Find the latest issued invoice, if any
-  const issuedInvoices = await db.select().from(invoices)
-    .where(eq(invoices.reservationId, reservationId))
-    .orderBy(desc(invoices.version))
-    .all();
+  const issuedInvoicesQuery = db.select().from(invoices).where(eq(invoices.reservationId, reservationId)).orderBy(desc(invoices.version));
+  const issuedInvoices = databaseProvider === 'postgres' ? (await dbReady, await issuedInvoicesQuery.execute()) : issuedInvoicesQuery.all();
   
   const issuedInvoice = issuedInvoices.length > 0 ? issuedInvoices[0] : null;
 
@@ -35,7 +37,8 @@ export default async function ReservationDetailPage({ params }: { params: Promis
     // SQLite drizzle doesn't natively do `inArray` easily without importing it, so we can fetch all proofs for these invoices
     // actually, inArray is in 'drizzle-orm', let's just use it or do a manual filter.
     // Or just fetch all proofs for the reservation's invoices:
-    const allProofsRows = await db.select().from(paymentProofs).all();
+    const allProofsQuery = db.select().from(paymentProofs);
+    const allProofsRows = databaseProvider === 'postgres' ? (await dbReady, await allProofsQuery.execute()) : allProofsQuery.all();
     proofs = allProofsRows.filter(p => invoiceIds.includes(p.invoiceId));
   }
 

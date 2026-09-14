@@ -1,6 +1,6 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
-import { db } from '@/db';
+import { db, databaseProvider, dbReady } from '@/db';
 import { shareLinks, invoices, qrPaymentArtifacts, reservations, units } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { QRCodeSVG } from 'qrcode.react';
@@ -38,21 +38,25 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
 
   try {
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-    const shareLink = db.select().from(shareLinks).where(eq(shareLinks.token, tokenHash)).get();
+    const shareLinkQuery = db.select().from(shareLinks).where(eq(shareLinks.token, tokenHash));
+    const shareLink = databaseProvider === 'postgres' ? (await dbReady, (await shareLinkQuery.execute())[0]) : shareLinkQuery.get();
 
     if (!shareLink || new Date(shareLink.expiresAt) < new Date()) {
       return notFound();
     }
 
-    const invoice = db.select().from(invoices).where(eq(invoices.id, shareLink.invoiceId)).get();
+    const invoiceQuery = db.select().from(invoices).where(eq(invoices.id, shareLink.invoiceId));
+    const invoice = databaseProvider === 'postgres' ? (await dbReady, (await invoiceQuery.execute())[0]) : invoiceQuery.get();
     if (!invoice) return notFound();
     invoiceData = invoice;
 
-    const reservation = db.select().from(reservations).where(eq(reservations.id, invoice.reservationId)).get();
+    const reservationQuery = db.select().from(reservations).where(eq(reservations.id, invoice.reservationId));
+    const reservation = databaseProvider === 'postgres' ? (await dbReady, (await reservationQuery.execute())[0]) : reservationQuery.get();
     if (!reservation) return notFound();
     reservationData = reservation;
 
-    const unit = db.select().from(units).where(eq(units.id, reservation.unitId)).get();
+    const unitQuery = db.select().from(units).where(eq(units.id, reservation.unitId));
+    const unit = databaseProvider === 'postgres' ? (await dbReady, (await unitQuery.execute())[0]) : unitQuery.get();
     unitName = unit?.displayName || 'Unit';
 
     try {
@@ -61,18 +65,13 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
       snapshot = null;
     }
 
-    qrArtifact = db.select().from(qrPaymentArtifacts)
-      .where(eq(qrPaymentArtifacts.invoiceId, invoice.id))
-      .orderBy(desc(qrPaymentArtifacts.artifactVersion))
-      .limit(1)
-      .get();
+    const qrQuery = db.select().from(qrPaymentArtifacts).where(eq(qrPaymentArtifacts.invoiceId, invoice.id)).orderBy(desc(qrPaymentArtifacts.artifactVersion)).limit(1);
+    qrArtifact = databaseProvider === 'postgres' ? (await dbReady, (await qrQuery.execute())[0]) : qrQuery.get();
 
     guestName = snapshot?.guestName || 'Guest name pending';
 
-    const pendingProofs = db.select().from(paymentProofs)
-      .where(eq(paymentProofs.invoiceId, invoice.id))
-      .all()
-      .filter(p => p.status === 'pending_review');
+    const pendingQuery = db.select().from(paymentProofs).where(eq(paymentProofs.invoiceId, invoice.id));
+    const pendingProofs = (databaseProvider === 'postgres' ? (await dbReady, await pendingQuery.execute()) : pendingQuery.all()).filter(p => p.status === 'pending_review');
 
     hasPendingProof = pendingProofs.length > 0;
   } catch (err: any) {
@@ -82,10 +81,8 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
 
     const isFinalized = invoiceData.finalizedAt !== null;
     const isPaid = invoiceData.status === 'paid' || invoiceData.balanceMinorUnits <= 0;
-    const verifiedProof = db.select().from(paymentProofs)
-      .where(eq(paymentProofs.invoiceId, invoiceData.id))
-      .all()
-      .find(p => p.status === 'verified');
+    const verifiedQuery = db.select().from(paymentProofs).where(eq(paymentProofs.invoiceId, invoiceData.id));
+    const verifiedProof = (databaseProvider === 'postgres' ? (await dbReady, await verifiedQuery.execute()) : verifiedQuery.all()).find(p => p.status === 'verified');
 
     const isVerified = isFinalized || isPaid || !!verifiedProof;
 

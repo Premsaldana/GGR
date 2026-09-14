@@ -1,5 +1,5 @@
 import { and, asc, eq, gte, lte } from 'drizzle-orm';
-import { db } from '@/db';
+import { db, databaseProvider, dbReady } from '@/db';
 import { roomAvailability, roomPrices, units } from '@/db/schema';
 import { monthRange } from '@/lib/pricing-core';
 import { PRIVATE_POOL_VILLA } from '@/lib/units';
@@ -7,10 +7,15 @@ import { PRIVATE_POOL_VILLA } from '@/lib/units';
 export { CURRENCY, monthRange, normalizePricePayload, priceBatchSchema, priceInputSchema, validatePriceInput, formatPrice, RATE_CODE } from '@/lib/pricing-core';
 
 export async function getPrivatePoolVilla() {
-  return db.select({ id: units.id, slug: units.slug, displayName: units.displayName })
+  await dbReady;
+  const query = db.select({ id: units.id, slug: units.slug, displayName: units.displayName })
     .from(units)
-    .where(and(eq(units.slug, PRIVATE_POOL_VILLA.slug), eq(units.active, true)))
-    .get();
+    .where(and(eq(units.slug, PRIVATE_POOL_VILLA.slug), eq(units.active, true)));
+  if (databaseProvider === 'postgres') {
+    const rows = await query.execute();
+    return rows[0];
+  }
+  return query.get();
 }
 
 export async function getActiveUnits() {
@@ -23,7 +28,7 @@ export async function getMonthlyPrices(month: string) {
   const villa = await getPrivatePoolVilla();
   if (!villa) return { month, start, end, units: [], prices: [], availability: [] };
 
-  const prices = (await db.select({
+  const priceQuery = db.select({
     id: roomPrices.id,
     unitId: roomPrices.unitId,
     rateCode: roomPrices.rateCode,
@@ -33,11 +38,11 @@ export async function getMonthlyPrices(month: string) {
   })
     .from(roomPrices)
     .where(and(eq(roomPrices.unitId, villa.id), gte(roomPrices.date, start), lte(roomPrices.date, end)))
-    .orderBy(asc(roomPrices.date))
-    .all())
+    .orderBy(asc(roomPrices.date));
+  const prices = (databaseProvider === 'postgres' ? await priceQuery.execute() : priceQuery.all())
     .filter((price) => Number.isInteger(price.amountMinorUnits) && price.amountMinorUnits > 0);
 
-  const availability = await db.select({
+  const availabilityQuery = db.select({
     id: roomAvailability.id,
     unitId: roomAvailability.unitId,
     date: roomAvailability.date,
@@ -46,14 +51,20 @@ export async function getMonthlyPrices(month: string) {
   })
     .from(roomAvailability)
     .where(and(eq(roomAvailability.unitId, villa.id), gte(roomAvailability.date, start), lte(roomAvailability.date, end), eq(roomAvailability.status, 'sold_off')))
-    .orderBy(asc(roomAvailability.date))
-    .all();
+    .orderBy(asc(roomAvailability.date));
+  const availability = databaseProvider === 'postgres' ? await availabilityQuery.execute() : availabilityQuery.all();
 
   return { month, start, end, units: [{ ...villa, displayName: PRIVATE_POOL_VILLA.displayName }], prices, availability };
 }
 
 export async function getPriceByKey(unitId: string, rateCode: string, date: string) {
-  return db.select().from(roomPrices).where(and(eq(roomPrices.unitId, unitId), eq(roomPrices.rateCode, rateCode), eq(roomPrices.date, date))).get();
+  await dbReady;
+  const query = db.select().from(roomPrices).where(and(eq(roomPrices.unitId, unitId), eq(roomPrices.rateCode, rateCode), eq(roomPrices.date, date)));
+  if (databaseProvider === 'postgres') {
+    const rows = await query.execute();
+    return rows[0];
+  }
+  return query.get();
 }
 
 export type MonthlyPrices = Awaited<ReturnType<typeof getMonthlyPrices>>;
