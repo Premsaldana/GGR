@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     role = 'guest';
   } else {
     const session = await getSession();
-    if (!session.isLoggedIn || session.role !== 'owner_admin' || !session.emailVerified) {
+    if (!session.isLoggedIn || session.role !== 'owner_admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     role = 'admin';
