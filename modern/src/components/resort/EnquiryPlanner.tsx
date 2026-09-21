@@ -10,8 +10,17 @@ export function EnquiryPlanner() {
   const searchParams = useSearchParams();
   const checkInParam = searchParams.get("checkIn") || "";
   const checkOutParam = searchParams.get("checkOut") || "";
+  const adultsParam = searchParams.get("adults") || "";
+  const childrenParam = searchParams.get("children") || "";
+  const roomsParam = searchParams.get("rooms") || "";
+  
   const checkIn = dateSchema.safeParse(checkInParam).success ? checkInParam : "";
   const checkOut = dateSchema.safeParse(checkOutParam).success ? checkOutParam : "";
+  
+  let initialGuests = "";
+  if (adultsParam) {
+    initialGuests = `${adultsParam} Adults${childrenParam && childrenParam !== "0" ? `, ${childrenParam} Children` : ""}`;
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -31,10 +40,11 @@ export function EnquiryPlanner() {
       "Hello! I would like to enquire about a private stay at Goa Garden Resort.",
       `Name: ${String(data.get("name") || "")}`,
       `Guests: ${String(data.get("guests") || "Not decided")}`,
+      roomsParam ? `Rooms: ${roomsParam} (Complete Private Resort)` : "",
       `Check-in: ${checkIn || "Flexible"}`,
       `Check-out: ${checkOut || "Flexible"}`,
       `Message: ${String(data.get("message") || "No additional notes")}`,
-    ].join("\n");
+    ].filter(Boolean).join("\n");
 
     window.location.assign(
       `https://wa.me/${siteConfig.whatsappNumber}?text=${encodeURIComponent(message)}`,
@@ -56,8 +66,8 @@ export function EnquiryPlanner() {
         <input id="checkOut" name="checkOut" type="date" defaultValue={checkOut} onChange={(event) => event.currentTarget.setCustomValidity("")} />
       </div>
       <div className="enquiry-planner__field enquiry-planner__field--full">
-        <label htmlFor="guests">Number of guests</label>
-        <input id="guests" name="guests" type="number" inputMode="numeric" min="1" max="20" placeholder="Up to 20" />
+        <label htmlFor="guests">Guests (Adults & Children)</label>
+        <input id="guests" name="guests" type="text" placeholder="e.g. 4 Adults, 2 Children" defaultValue={initialGuests} />
       </div>
       <div className="enquiry-planner__field enquiry-planner__field--full">
         <label htmlFor="message">Anything we should know?</label>

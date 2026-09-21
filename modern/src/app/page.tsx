@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { ParallaxMedia } from "@/components/resort/ParallaxMedia";
 import { siteConfig } from "@/content/site";
+import { StaySearch } from "@/components/resort/StaySearch";
 
 export const metadata: Metadata = {
   title: "Goa Garden Resort — Your Private 5-Bedroom Resort in Colva",
@@ -89,6 +90,10 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      <div className="search-widget-container">
+        <StaySearch />
+      </div>
 
       <div className="ticker">
         <div className="ticker__track">

@@ -6,6 +6,7 @@ import { ResortFooter } from "@/components/resort/ResortFooter";
 import { LayoutBoundary } from "@/components/resort/LayoutBoundary";
 import { siteConfig } from "@/content/site";
 import "./globals.css";
+import "./stay-search.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
   || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null)
