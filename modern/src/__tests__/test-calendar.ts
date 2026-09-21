@@ -12,7 +12,7 @@ sqlite.exec(`
   CREATE TABLE users (id TEXT PRIMARY KEY, email TEXT, role TEXT, totp_secret TEXT, created_at INTEGER);
   CREATE TABLE guests (id TEXT PRIMARY KEY, full_name TEXT, phone TEXT, email TEXT, notes TEXT, created_at INTEGER, updated_at INTEGER);
   CREATE TABLE units (id TEXT PRIMARY KEY, display_name TEXT, slug TEXT, property_label TEXT, capacity_adults INTEGER, capacity_children INTEGER, active INTEGER, default_check_in_time TEXT, default_check_out_time TEXT);
-  CREATE TABLE reservations (id TEXT PRIMARY KEY, reservation_number TEXT, guest_id TEXT, unit_id TEXT, check_in_date TEXT, check_out_date TEXT, booking_status TEXT, payment_status TEXT, adults INTEGER, children INTEGER, payment_mode TEXT, advance_received_minor_units INTEGER, advance_received_at INTEGER, notes TEXT, created_by TEXT, created_at INTEGER, updated_at INTEGER);
+  CREATE TABLE reservations (id TEXT PRIMARY KEY, reservation_number TEXT, guest_id TEXT, unit_id TEXT, check_in_date TEXT, check_out_date TEXT, booking_status TEXT, payment_status TEXT, adults INTEGER, children INTEGER, security_deposit_minor_units INTEGER, payment_mode TEXT, advance_received_minor_units INTEGER, advance_received_at INTEGER, notes TEXT, created_by TEXT, created_at INTEGER, updated_at INTEGER);
   CREATE TABLE reservation_line_items (id TEXT PRIMARY KEY, reservation_id TEXT, category TEXT, description TEXT, quantity INTEGER, unit_label TEXT, rate_minor_units INTEGER, tax_rate REAL, amount_minor_units INTEGER, sort_order INTEGER);
   CREATE TABLE audit_events (id TEXT PRIMARY KEY, actor_user_id TEXT, entity_type TEXT, entity_id TEXT, event_type TEXT, before_json TEXT, after_json TEXT, request_id TEXT, created_at INTEGER);
 `);

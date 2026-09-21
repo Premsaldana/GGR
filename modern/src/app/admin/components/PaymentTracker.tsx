@@ -7,10 +7,9 @@ import { Loader2, Plus, CheckCircle2 } from 'lucide-react';
 interface PaymentTrackerProps {
   invoiceId: string;
   totalMinorUnits: number;
-  advanceMinorUnits: number;
 }
 
-export function PaymentTracker({ invoiceId, totalMinorUnits, advanceMinorUnits }: PaymentTrackerProps) {
+export function PaymentTracker({ invoiceId, totalMinorUnits }: PaymentTrackerProps) {
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +30,7 @@ export function PaymentTracker({ invoiceId, totalMinorUnits, advanceMinorUnits }
   };
 
   const totalAdditional = payments.reduce((acc, p) => acc + p.amountMinorUnits, 0);
-  const totalPaid = advanceMinorUnits + totalAdditional;
+  const totalPaid = totalAdditional;
   const balance = Math.max(0, totalMinorUnits - totalPaid);
   const overpayment = totalPaid > totalMinorUnits ? totalPaid - totalMinorUnits : 0;
 
@@ -73,10 +72,7 @@ export function PaymentTracker({ invoiceId, totalMinorUnits, advanceMinorUnits }
           <span className="text-gray-500 block">Invoice Total</span>
           <span className="font-semibold">₹{(totalMinorUnits / 100).toFixed(2)}</span>
         </div>
-        <div className="p-3 bg-gray-50 border rounded text-sm">
-          <span className="text-gray-500 block">Advance</span>
-          <span className="font-semibold">₹{(advanceMinorUnits / 100).toFixed(2)}</span>
-        </div>
+
         <div className="p-3 bg-gray-50 border rounded text-sm">
           <span className="text-gray-500 block">Total Paid</span>
           <span className="font-semibold text-green-700">₹{(totalPaid / 100).toFixed(2)}</span>

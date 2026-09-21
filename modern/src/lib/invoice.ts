@@ -90,14 +90,14 @@ export function calculateInvoice(input: InvoiceCalculationInput): InvoiceCalcula
   }
 
   const securityDepositMinorUnits = input.refundableSecurityDepositMinorUnits ?? (5000 * 100); // default 5000 INR
-  const advanceMinorUnits = input.advanceReceivedMinorUnits || 0;
+  const advanceMinorUnits = 0; // Advance is deprecated and no longer processed
 
-  // The total amount due INCLUDES the security deposit (as it needs to be collected)
-  const totalMinorUnits = subtotalMinorUnits + taxMinorUnits + securityDepositMinorUnits;
+  // The total amount due DOES NOT INCLUDE the security deposit per user request
+  const totalMinorUnits = subtotalMinorUnits + taxMinorUnits;
   
-  // Balance due cannot be negative
-  const balanceMinorUnits = Math.max(0, totalMinorUnits - advanceMinorUnits);
-  const overpaymentMinorUnits = Math.max(0, advanceMinorUnits - totalMinorUnits);
+  // Since advance is no longer subtracted, the balance due is simply the total payable
+  const balanceMinorUnits = totalMinorUnits;
+  const overpaymentMinorUnits = 0;
 
   return {
     subtotalMinorUnits,

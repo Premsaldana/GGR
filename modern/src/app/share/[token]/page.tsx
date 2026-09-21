@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/Button';
 
 // Ensure the page isn't indexed by search engines
 export const metadata = {
-  title: 'Guest Bill - Goa Garden Resort',
+  title: 'Booking Voucher - Goa Garden Resort',
   robots: {
     index: false,
     follow: false,
@@ -91,7 +91,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
         <div className="w-full max-w-md bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
           <div className="bg-[#233B35] text-white py-6 px-6 text-center">
             <h1 className="text-2xl font-serif tracking-wide">Goa Garden Resort</h1>
-            <p className="opacity-90 mt-1 text-sm uppercase tracking-widest">Payment Receipt</p>
+            <p className="opacity-90 mt-1 text-sm uppercase tracking-widest">Booking Voucher</p>
           </div>
 
           <div className="p-6 border-b border-gray-100">
@@ -115,7 +115,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                 </span>
               </div>
               <div className="flex justify-between items-start">
-                <span className="text-gray-500">Invoice Total</span>
+                <span className="text-gray-500">Total Payable</span>
                 <span className="font-medium text-right">Rs.{invoiceData.totalMinorUnits / 100}</span>
               </div>
             </div>
@@ -130,7 +130,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
               <p className="text-sm text-[#388E3C] mb-6 text-center">Your payment has been received and verified by the resort.</p>
               
               <Button as="a" href={`/api/share/${token}/download`} target="_blank" rel="noopener noreferrer" className="w-full">
-                Download Invoice (PDF)
+                Download Booking Voucher (PDF)
               </Button>
             </div>
           ) : qrArtifact ? (

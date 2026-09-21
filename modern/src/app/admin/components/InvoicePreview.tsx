@@ -50,7 +50,7 @@ export function InvoicePreview({ invoiceId, reservation, calculation, lineItems,
           </div>
         </div>
         <div className="text-right mt-6 md:mt-0">
-          <h2 className="text-2xl font-bold tracking-widest text-[#B75E3C]">BOOKING INVOICE {isDraft && '(DRAFT)'}</h2>
+          <h2 className="text-2xl font-bold tracking-widest text-[#B75E3C]">BOOKING VOUCHER {isDraft && '(DRAFT)'}</h2>
           <div className="mt-4 text-sm space-y-2">
             <p><span className="font-semibold">Reservation #:</span> {reservation.reservationNumber || <span className="text-red-500 italic">Pending</span>}</p>
             <p><span className="font-semibold">Date of Issue:</span> {isDraft ? <span className="italic">Not Issued</span> : new Date().toLocaleDateString('en-IN')}</p>
@@ -62,7 +62,7 @@ export function InvoicePreview({ invoiceId, reservation, calculation, lineItems,
       <div className="mb-8">
         <p>Dear {reservation.guestName || <span className="text-red-500 italic">Guest name pending</span>},</p>
         <p className="mt-2 text-sm leading-relaxed">
-          Thank you for choosing Goa Garden Resort. We look forward to welcoming you and ensuring an unforgettable stay at our private pool villa in Colva, South Goa. Please find your booking details and invoice summary below.
+          Thank you for choosing Goa Garden Resort. We look forward to welcoming you and ensuring an unforgettable stay at our private pool villa in Colva, South Goa. Please find your booking details and voucher summary below.
         </p>
       </div>
 
@@ -112,10 +112,7 @@ export function InvoicePreview({ invoiceId, reservation, calculation, lineItems,
               <span>GST / Applicable Taxes</span>
               <span>{formatCurrency(calculation.taxMinorUnits)}</span>
             </div>
-            <div className="flex justify-between py-1 border-b border-[#E8E1D6]">
-              <span>Refundable Security Deposit</span>
-              <span>{formatCurrency(calculation.securityDepositMinorUnits)}</span>
-            </div>
+
             <div className="flex justify-between py-2 font-bold text-lg text-[#B88A3B]">
               <span>TOTAL AMOUNT DUE</span>
               <span>{formatCurrency(calculation.totalMinorUnits)}</span>
@@ -136,13 +133,9 @@ export function InvoicePreview({ invoiceId, reservation, calculation, lineItems,
             <span>Payment Mode</span>
             <span className="font-semibold">{reservation.paymentMode || <span className="text-red-500 italic">PROVISIONAL</span>}</span>
           </div>
-          <div className="flex justify-between border-b border-dashed border-[#E8E1D6] pb-2">
-            <span>Advance Payment Received</span>
-            <span className="font-semibold">{formatCurrency(calculation.advanceMinorUnits)}</span>
-          </div>
           <div className="flex justify-between border-b border-dashed border-[#E8E1D6] pb-2 text-[#B75E3C] font-bold text-lg">
-            <span>BALANCE DUE ON CHECK-IN</span>
-            <span>{formatCurrency(calculation.balanceMinorUnits)}</span>
+            <span>TOTAL PAYABLE AT CHECK-IN</span>
+            <span>{formatCurrency(calculation.totalMinorUnits)}</span>
           </div>
           {calculation.overpaymentMinorUnits > 0 && (
             <div className="flex justify-between border-b border-dashed border-[#E8E1D6] pb-2 text-green-700 font-bold text-lg">
@@ -177,12 +170,10 @@ export function InvoicePreview({ invoiceId, reservation, calculation, lineItems,
           <PaymentTracker
             invoiceId={invoiceId}
             totalMinorUnits={calculation.totalMinorUnits}
-            advanceMinorUnits={calculation.advanceMinorUnits}
           />
           <QRPaymentFlow 
             invoiceId={invoiceId} 
             totalMinorUnits={calculation.totalMinorUnits}
-            advanceMinorUnits={calculation.advanceMinorUnits}
             balanceMinorUnits={calculation.balanceMinorUnits}
             securityDepositMinorUnits={calculation.securityDepositMinorUnits}
           />
@@ -204,19 +195,7 @@ export function InvoicePreview({ invoiceId, reservation, calculation, lineItems,
         </ul>
       </div>
 
-      {/* Signatures */}
-      <div className="mt-12 flex justify-between text-sm pt-8 border-t border-[#E8E1D6]">
-        <div className="w-1/2">
-          <div className="border-t border-[#1D2422] w-48 mb-2"></div>
-          <p>Authorized Signature</p>
-          <p className="font-semibold">Goa Garden Resort</p>
-        </div>
-        <div className="w-1/2 text-right flex flex-col items-end">
-          <div className="border-t border-[#1D2422] w-48 mb-2"></div>
-          <p>Guest Signature & Date</p>
-          <p className="font-semibold">{reservation.guestName || '_________________'}</p>
-        </div>
-      </div>
+
 
       <div className="mt-8 text-center text-xs text-[#718779]">
         <p>Queries? Call 91-7813093075 or goagardenresort@gmail.com</p>

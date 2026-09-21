@@ -8,12 +8,12 @@ import { Loader2, Copy, CheckCircle2, Link as LinkIcon, RefreshCw } from 'lucide
 interface QRPaymentFlowProps {
   invoiceId: string;
   totalMinorUnits: number;
-  advanceMinorUnits: number;
+
   balanceMinorUnits: number;
   securityDepositMinorUnits: number;
 }
 
-export function QRPaymentFlow({ invoiceId, totalMinorUnits, advanceMinorUnits, balanceMinorUnits, securityDepositMinorUnits }: QRPaymentFlowProps) {
+export function QRPaymentFlow({ invoiceId, totalMinorUnits, balanceMinorUnits, securityDepositMinorUnits }: QRPaymentFlowProps) {
   const [amountInput, setAmountInput] = useState<string>((balanceMinorUnits / 100).toString());
   const [qrArtifact, setQrArtifact] = useState<any>(null);
   const [shareLinks, setShareLinks] = useState<any[]>([]);
@@ -44,10 +44,10 @@ export function QRPaymentFlow({ invoiceId, totalMinorUnits, advanceMinorUnits, b
     const res = await generateQRAction(invoiceId, Math.round(amt));
     if (res.error) {
       setError(res.error);
+      setLoading(false);
     } else {
-      await loadData();
+      await handleGenerateLink();
     }
-    setLoading(false);
   };
 
   const handleGenerateLink = async () => {
@@ -94,7 +94,7 @@ export function QRPaymentFlow({ invoiceId, totalMinorUnits, advanceMinorUnits, b
           
           <div className="bg-gray-50 p-3 text-sm rounded border border-gray-200">
             <p><strong>Total:</strong> ₹{totalMinorUnits / 100}</p>
-            <p><strong>Advance:</strong> ₹{advanceMinorUnits / 100}</p>
+
             <p><strong>Balance:</strong> ₹{balanceMinorUnits / 100}</p>
             <p className="text-xs text-gray-500 mt-1">Admin must explicitly confirm the QR amount.</p>
           </div>

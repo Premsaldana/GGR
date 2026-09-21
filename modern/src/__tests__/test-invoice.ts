@@ -12,10 +12,10 @@ sqlite.exec(`
   CREATE TABLE users (id TEXT PRIMARY KEY, email TEXT, role TEXT, totp_secret TEXT, created_at INTEGER);
   CREATE TABLE guests (id TEXT PRIMARY KEY, full_name TEXT, phone TEXT, email TEXT, notes TEXT, created_at INTEGER, updated_at INTEGER);
   CREATE TABLE units (id TEXT PRIMARY KEY, display_name TEXT, slug TEXT, property_label TEXT, capacity_adults INTEGER, capacity_children INTEGER, active INTEGER, default_check_in_time TEXT, default_check_out_time TEXT);
-  CREATE TABLE reservations (id TEXT PRIMARY KEY, reservation_number TEXT, guest_id TEXT, unit_id TEXT, check_in_date TEXT, check_out_date TEXT, booking_status TEXT, payment_status TEXT, adults INTEGER, children INTEGER, security_deposit_minor_units INTEGER, payment_mode TEXT, advance_received_minor_units INTEGER, advance_received_at INTEGER, notes TEXT, created_by TEXT, created_at INTEGER, updated_at INTEGER);
+  CREATE TABLE reservations (id TEXT PRIMARY KEY, reservation_number TEXT, guest_id TEXT, unit_id TEXT, check_in_date TEXT, check_out_date TEXT, booking_status TEXT, payment_status TEXT, adults INTEGER, children INTEGER, payment_mode TEXT, security_deposit_minor_units INTEGER, advance_received_minor_units INTEGER, advance_received_at INTEGER, notes TEXT, created_by TEXT, created_at INTEGER, updated_at INTEGER);
   CREATE TABLE reservation_line_items (id TEXT PRIMARY KEY, reservation_id TEXT, category TEXT, description TEXT, quantity INTEGER, unit_label TEXT, rate_minor_units INTEGER, tax_rate REAL, amount_minor_units INTEGER, sort_order INTEGER);
   CREATE TABLE audit_events (id TEXT PRIMARY KEY, actor_user_id TEXT, entity_type TEXT, entity_id TEXT, event_type TEXT, before_json TEXT, after_json TEXT, request_id TEXT, created_at INTEGER);
-  CREATE TABLE invoices (id TEXT PRIMARY KEY, invoice_number TEXT, reservation_id TEXT, version INTEGER, status TEXT, issued_at INTEGER, currency TEXT, subtotal_minor_units INTEGER, tax_minor_units INTEGER, security_deposit_minor_units INTEGER, total_minor_units INTEGER, advance_minor_units INTEGER, balance_minor_units INTEGER, amount_in_words TEXT, snapshot_json TEXT, created_by TEXT, created_at INTEGER);
+  CREATE TABLE invoices (id TEXT PRIMARY KEY, invoice_number TEXT, reservation_id TEXT, version INTEGER, status TEXT, issued_at INTEGER, currency TEXT, subtotal_minor_units INTEGER, tax_minor_units INTEGER, security_deposit_minor_units INTEGER, total_minor_units INTEGER, advance_minor_units INTEGER, balance_minor_units INTEGER, amount_in_words TEXT, snapshot_json TEXT, created_by TEXT, created_at INTEGER, parent_invoice_id TEXT, finalized_at INTEGER, finalized_by TEXT);
 `);
 
 async function runInvoiceTests() {
@@ -45,7 +45,7 @@ async function runInvoiceTests() {
     refundableSecurityDepositMinorUnits: 500000 // 5000
   });
 
-  if (calc1.subtotalMinorUnits === 2080000 && calc1.taxMinorUnits === 0 && calc1.securityDepositMinorUnits === 500000 && calc1.totalMinorUnits === 2580000 && calc1.balanceMinorUnits === 2080000) {
+  if (calc1.subtotalMinorUnits === 2080000 && calc1.taxMinorUnits === 0 && calc1.securityDepositMinorUnits === 500000 && calc1.totalMinorUnits === 2080000 && calc1.balanceMinorUnits === 2080000) {
     console.log('✅ Test 2 Passed');
   } else {
     console.error('❌ Test 2 Failed', calc1);
@@ -58,7 +58,7 @@ async function runInvoiceTests() {
     advanceReceivedMinorUnits: 5000000 // 50000 advance
   });
   // Balance should not be negative
-  if (calc2.balanceMinorUnits === 0 && calc2.overpaymentMinorUnits === 4400000) { // 50000 - 6000(total) = 44000
+  if (calc2.balanceMinorUnits === 100000 && calc2.overpaymentMinorUnits === 0) { // advance ignored
     console.log('✅ Test 3 Passed');
   } else {
     console.error('❌ Test 3 Failed', calc2);
@@ -122,7 +122,7 @@ async function runInvoiceTests() {
     refundableSecurityDepositMinorUnits: 500000 // 5000
   });
 
-  if (calc5.subtotalMinorUnits === 0 && calc5.totalMinorUnits === 500000 && calc5.balanceMinorUnits === 500000) {
+  if (calc5.subtotalMinorUnits === 0 && calc5.totalMinorUnits === 0 && calc5.balanceMinorUnits === 0) {
     console.log('✅ Test 5 Passed');
   } else {
     console.error('❌ Test 5 Failed', calc5);
@@ -176,8 +176,8 @@ async function runInvoiceTests() {
   // Subtotal = 1500000 + 160000 + 200000 = 1860000
   // Tax = 18% of 1860000 = 334800
   // Deposit = 500000
-  // Total = 1860000 + 334800 + 500000 = 2694800
-  if (calc8.subtotalMinorUnits === 1860000 && calc8.taxMinorUnits === 334800 && calc8.totalMinorUnits === 2694800) {
+  // Total = 1860000 + 334800 = 2194800
+  if (calc8.subtotalMinorUnits === 1860000 && calc8.taxMinorUnits === 334800 && calc8.totalMinorUnits === 2194800) {
     console.log('✅ Test 8 Passed');
   } else {
     console.error('❌ Test 8 Failed', calc8);

@@ -33,9 +33,8 @@ const InvoiceDocument = ({ invoice, snapshot, payments, qrArtifact }: InvoicePDF
   const lineItems = snapshot?.input?.lineItems || snapshot?.lineItems || [];
   const resData = snapshot || {};
   
-  const advance = invoice.advanceMinorUnits || 0;
   const additionalPaid = payments.reduce((acc, p) => acc + p.amountMinorUnits, 0);
-  const totalPaid = advance + additionalPaid;
+  const totalPaid = additionalPaid;
   const balance = Math.max(0, invoice.totalMinorUnits - totalPaid);
   const overpayment = totalPaid > invoice.totalMinorUnits ? totalPaid - invoice.totalMinorUnits : 0;
 
@@ -45,7 +44,7 @@ const InvoiceDocument = ({ invoice, snapshot, payments, qrArtifact }: InvoicePDF
         <View style={styles.header}>
           <View>
             <Text style={styles.title}>Goa Garden Resort</Text>
-            <Text style={styles.subtitle}>Invoice #{invoice.invoiceNumber}</Text>
+            <Text style={styles.subtitle}>Booking Voucher #{invoice.invoiceNumber}</Text>
             <Text style={styles.subtitle}>Issued: {new Date(invoice.issuedAt || invoice.createdAt).toLocaleDateString()}</Text>
           </View>
           <View style={{ textAlign: 'right' }}>
@@ -84,12 +83,9 @@ const InvoiceDocument = ({ invoice, snapshot, payments, qrArtifact }: InvoicePDF
             <Text style={styles.totalLabel}>Taxes:</Text>
             <Text style={styles.totalValue}>{(invoice.taxMinorUnits / 100).toFixed(2)}</Text>
           </View>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Security Deposit (Refundable):</Text>
-            <Text style={styles.totalValue}>{(invoice.securityDepositMinorUnits / 100).toFixed(2)}</Text>
-          </View>
+
           <View style={[styles.totalRow, { marginTop: 10 }]}>
-            <Text style={[styles.totalLabel, { fontSize: 12 }]}>Invoice Total:</Text>
+            <Text style={[styles.totalLabel, { fontSize: 12 }]}>Total Payable at Check-in:</Text>
             <Text style={[styles.totalValue, { fontSize: 12 }]}>{(invoice.totalMinorUnits / 100).toFixed(2)}</Text>
           </View>
           <Text style={{ textAlign: 'right', marginTop: 4, fontStyle: 'italic', fontSize: 9 }}>
@@ -100,19 +96,11 @@ const InvoiceDocument = ({ invoice, snapshot, payments, qrArtifact }: InvoicePDF
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Payment Summary</Text>
           <View style={styles.row}>
-            <Text>Advance Paid:</Text>
-            <Text>{(advance / 100).toFixed(2)}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text>Additional Payments ({payments.length}):</Text>
+            <Text>Payments Received ({payments.length}):</Text>
             <Text>{(additionalPaid / 100).toFixed(2)}</Text>
           </View>
-          <View style={styles.row}>
-            <Text style={{ fontWeight: 'bold' }}>Total Paid:</Text>
-            <Text style={{ fontWeight: 'bold' }}>{(totalPaid / 100).toFixed(2)}</Text>
-          </View>
           <View style={[styles.row, { marginTop: 10, color: '#d32f2f' }]}>
-            <Text style={{ fontWeight: 'bold' }}>Remaining Balance:</Text>
+            <Text style={{ fontWeight: 'bold' }}>Total Payable at Check-in:</Text>
             <Text style={{ fontWeight: 'bold' }}>{(balance / 100).toFixed(2)}</Text>
           </View>
           {overpayment > 0 && (
@@ -123,19 +111,39 @@ const InvoiceDocument = ({ invoice, snapshot, payments, qrArtifact }: InvoicePDF
           )}
         </View>
 
-        {qrArtifact && (
-          <View style={styles.qrContainer}>
-            <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Payment Request</Text>
-            <Text style={{ marginBottom: 4 }}>Please scan via UPI to pay ₹{(qrArtifact.amountMinorUnits / 100).toFixed(2)}</Text>
-            <Text style={{ fontSize: 8, color: '#666' }}>Note: QR generation does not prove payment.</Text>
-            {/* Note: We would ideally render the QR code image here. For @react-pdf/renderer we need a PNG/JPG. Since we generate SVG client-side, we omit the graphic or use an external URL. */}
-            <Text style={{ fontSize: 8, marginTop: 4 }}>UPI ID: {qrArtifact.upiId}</Text>
-          </View>
-        )}
+
+
+        <View style={styles.section} wrap={false}>
+          <Text style={styles.sectionTitle}>PROPERTY POLICIES &amp; HOUSE RULES</Text>
+          
+          <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>Cancellation Policy</Text>
+          <Text style={{ marginBottom: 8, color: '#666' }}>No cancellation and no refund once booking is confirmed.</Text>
+          
+          <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>Check-In / Check-Out</Text>
+          <Text style={{ marginBottom: 8, color: '#666' }}>Check-In: 1:00 PM | Check-Out: 11:00 AM. Early/late checkout subject to availability &amp; extra charges.</Text>
+          
+          <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>Pets</Text>
+          <Text style={{ marginBottom: 8, color: '#666' }}>Pets are strictly not allowed on the property.</Text>
+          
+          <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>Security Deposit</Text>
+          <Text style={{ marginBottom: 8, color: '#666' }}>Refundable deposit of Rs 5,000 payable at check-in.</Text>
+          
+          <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>Swimming Pool</Text>
+          <Text style={{ marginBottom: 8, color: '#666' }}>Pool hours: 8:00 AM to 8:00 PM. No music after 10:00 PM. Children must be supervised.</Text>
+          
+          <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>Kitchen / Cooking</Text>
+          <Text style={{ marginBottom: 8, color: '#666' }}>No kitchen available. Cooking inside the villa is not permitted.</Text>
+          
+          <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>Breakfast</Text>
+          <Text style={{ marginBottom: 8, color: '#666' }}>Breakfast is not complimentary and not included.</Text>
+          
+          <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>Extra Guests</Text>
+          <Text style={{ marginBottom: 8, color: '#666' }}>Extra person charge: Rs 800 per head per night.</Text>
+        </View>
 
         <View style={styles.footer}>
-          <Text>Goa Garden Resort - Thank you for your stay!</Text>
-          <Text>This is a computer-generated document and does not require a signature.</Text>
+          <Text>Queries? Call 91-7813093075 or goagardenresort@gmail.com</Text>
+          <Text style={{ marginTop: 2 }}>Thank you for choosing us!</Text>
         </View>
       </Page>
     </Document>

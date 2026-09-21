@@ -20,8 +20,6 @@ const formSchema = z.object({
   children: z.number().min(0),
   bookingStatus: z.enum(['pending', 'confirmed', 'cancelled']),
   paymentMode: z.enum(['UPI', 'CASH', 'BANK_TRANSFER']).optional().or(z.literal('')),
-  advanceReceived: z.number().min(0).optional(),
-  advanceReceivedAt: z.string().optional(),
   notes: z.string().optional(),
   
   // Pricing inputs
@@ -90,7 +88,6 @@ export default function ReservationForm({
       earlyCheckIn: data.earlyCheckIn,
       lateCheckOut: data.lateCheckOut,
       securityDeposit: data.securityDeposit,
-      advanceReceived: data.advanceReceived || 0,
       additionalServices: data.additionalServices?.map(s => ({
         ...s,
         rate: s.rate
@@ -107,8 +104,6 @@ export default function ReservationForm({
   };
 
   const formValues = watch();
-  const advanceMinor = (formValues.advanceReceived || 0) * 100;
-  
   let liveSummary = null;
   try {
     const cin = new Date(formValues.checkInDate);
@@ -190,7 +185,6 @@ export default function ReservationForm({
 
     liveSummary = calculateInvoice({
       lineItems: generatedLineItems,
-      advanceReceivedMinorUnits: isNaN(advanceMinor) ? 0 : advanceMinor,
       refundableSecurityDepositMinorUnits: depositMinor
     });
   } catch (e) {
@@ -371,17 +365,6 @@ export default function ReservationForm({
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Advance Received (₹)</label>
-                <input type="number" {...register("advanceReceived", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Advance Date</label>
-                <input type="datetime-local" {...register("advanceReceivedAt")} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
                 <label className="block text-sm font-medium mb-1">Payment Mode</label>
                 <select {...register("paymentMode")} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white">
                   <option value="">None</option>
@@ -412,9 +395,7 @@ export default function ReservationForm({
               <div className="flex justify-between"><span>Subtotal:</span> <span>₹{liveSummary.subtotalMinorUnits / 100}</span></div>
               <div className="flex justify-between"><span>Tax (GST):</span> <span>₹{liveSummary.taxMinorUnits / 100}</span></div>
               <div className="flex justify-between"><span>Security Deposit (Refundable):</span> <span>₹{liveSummary.securityDepositMinorUnits / 100}</span></div>
-              <div className="flex justify-between font-bold border-t pt-1"><span>Total:</span> <span>₹{liveSummary.totalMinorUnits / 100}</span></div>
-              <div className="flex justify-between text-green-700"><span>Advance Received:</span> <span>₹{liveSummary.advanceMinorUnits / 100}</span></div>
-              <div className="flex justify-between text-red-700 font-bold border-t pt-1"><span>Balance Due:</span> <span>₹{liveSummary.balanceMinorUnits / 100}</span></div>
+              <div className="flex justify-between font-bold border-t pt-1 text-red-700"><span>Total Payable at Check-in:</span> <span>₹{liveSummary.totalMinorUnits / 100}</span></div>
             </div>
           )}
 

@@ -31,8 +31,6 @@ export const reservationFormSchema = z.object({
   children: z.number().int().min(0),
   bookingStatus: z.enum(['pending', 'confirmed', 'cancelled']),
   paymentMode: z.enum(['UPI', 'CASH', 'BANK_TRANSFER']).optional().or(z.literal('')),
-  advanceReceived: rupeesSchema.optional(),
-  advanceReceivedAt: z.string().optional(),
   notes: z.string().optional(),
   
   // Pricing inputs
