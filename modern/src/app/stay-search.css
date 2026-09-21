@@ -1,90 +1,178 @@
-/* Stay Search BEM Classes */
-.stay-search {
+/* Stay Search V2 (Booking.com style) */
+.stay-search-v2 {
   max-width: 92rem;
   margin: 0 auto;
   padding: 1.5rem;
 }
-.stay-search__form {
-  display: flex;
-  background: var(--ggr-sun);
-  border-radius: 4px;
-  padding: 6px;
-  gap: 6px;
-  align-items: stretch;
+.stay-search-v2__form {
+  position: relative;
 }
-.stay-search__field-group {
+.stay-search-v2__container {
+  display: flex;
+  background: #febb02; /* Booking.com yellow */
+  padding: 4px;
+  border-radius: 4px;
+  gap: 4px;
+}
+.stay-search-v2__field-wrapper {
+  position: relative;
+  flex: 1;
+}
+.stay-search-v2__field {
   display: flex;
   align-items: center;
   background: #fff;
-  flex: 1;
-  padding: 0.75rem 1rem;
-  border-radius: 4px;
+  border: 2px solid transparent;
+  width: 100%;
+  height: 100%;
+  padding: 0.5rem 1rem;
   gap: 0.75rem;
+  cursor: pointer;
+  text-align: left;
+  border-radius: 2px;
+  transition: border-color 0.2s;
 }
-.stay-search__icon {
-  color: var(--ggr-ink);
-  opacity: 0.6;
+.stay-search-v2__field:hover, .stay-search-v2__field:focus-within {
+  border-color: #0071c2;
 }
-.stay-search__input-wrapper {
+.stay-search-v2__icon {
+  color: #333;
+}
+.stay-search-v2__field-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.stay-search-v2__label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #666;
+  margin-bottom: 0.1rem;
+}
+.stay-search-v2__value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+}
+.stay-search-v2__chevron {
+  color: #333;
+  margin-left: auto;
+}
+.stay-search-v2__submit {
+  background: #0071c2; /* Booking blue */
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 0 2.5rem;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.stay-search-v2__submit:hover {
+  background: #005999;
+}
+
+/* Popovers */
+.stay-search-v2__popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  z-index: 50;
+  border: 1px solid #e7e7e7;
+  animation: popIn 0.2s ease-out;
+}
+.stay-search-v2__popover--occupancy {
+  width: 320px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Counter Controls */
+.stay-search-v2__counter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.stay-search-v2__counter-label {
   display: flex;
   flex-direction: column;
 }
-.stay-search__label {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.7;
+.stay-search-v2__counter-label strong {
+  font-size: 0.95rem;
+  color: #333;
 }
-.stay-search__dates, .stay-search__occupancy {
+.stay-search-v2__counter-label small {
+  font-size: 0.75rem;
+  color: #666;
+}
+.stay-search-v2__counter-controls {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.2rem;
+  gap: 1rem;
 }
-.stay-search__input {
-  border: none;
-  background: transparent;
-  font-family: inherit;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--ggr-ink);
-  padding: 0;
-  outline: none;
-}
-.stay-search__input--number {
-  width: 2.5rem;
-}
-.stay-search__submit {
-  padding: 0 2rem;
-  font-size: 1rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+.stay-search-v2__counter-controls button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
   border-radius: 4px;
+  border: 1px solid #0071c2;
+  background: #fff;
+  color: #0071c2;
   cursor: pointer;
-  background: var(--ggr-blue);
-  color: #fff;
-  border: none;
-  transition: opacity 160ms ease;
 }
-.stay-search__submit:hover {
-  opacity: 0.9;
+.stay-search-v2__counter-controls button:disabled {
+  border-color: #e7e7e7;
+  color: #ccc;
+  cursor: not-allowed;
 }
-.stay-search__error {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: #fef2f2;
-  color: #991b1b;
-  border-radius: 4px;
+.stay-search-v2__counter-controls button:not(:disabled):hover {
+  background: #f0f7fb;
+}
+.stay-search-v2__counter-controls span {
+  font-size: 1rem;
+  font-weight: 500;
+  width: 1.5rem;
+  text-align: center;
+}
+
+/* React Day Picker Overrides for Booking.com style */
+.rdp-root {
+  --rdp-accent-color: #0071c2;
+  --rdp-background-color: #f0f7fb;
+  margin: 1rem;
 }
 
 @media (max-width: 900px) {
-  .stay-search__form {
+  .stay-search-v2__container {
     flex-direction: column;
   }
-  .stay-search__submit {
+  .stay-search-v2__submit {
     padding: 1rem;
+  }
+  .stay-search-v2__popover {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 400px;
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: translate(-50%, -45%); }
+    to { opacity: 1; transform: translate(-50%, -50%); }
   }
 }
 

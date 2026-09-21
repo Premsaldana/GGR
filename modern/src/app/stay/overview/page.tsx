@@ -11,12 +11,13 @@ export const metadata = {
 
 export const dynamic = 'force-dynamic';
 
-export default async function StayOverviewPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
-  const checkIn = typeof searchParams.checkIn === 'string' ? searchParams.checkIn : '';
-  const checkOut = typeof searchParams.checkOut === 'string' ? searchParams.checkOut : '';
-  const adults = typeof searchParams.adults === 'string' ? searchParams.adults : '2';
-  const children = typeof searchParams.children === 'string' ? searchParams.children : '0';
-  const rooms = typeof searchParams.rooms === 'string' ? searchParams.rooms : '1';
+export default async function StayOverviewPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
+  const params = await searchParams;
+  const checkIn = typeof params.checkIn === 'string' ? params.checkIn : '';
+  const checkOut = typeof params.checkOut === 'string' ? params.checkOut : '';
+  const adults = typeof params.adults === 'string' ? params.adults : '2';
+  const children = typeof params.children === 'string' ? params.children : '0';
+  const rooms = typeof params.rooms === 'string' ? params.rooms : '1';
 
   let available = false;
   let reason = '';

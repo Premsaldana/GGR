@@ -1,7 +1,7 @@
-import { and, asc, eq, gte, lte } from 'drizzle-orm';
+import { and, asc, eq, gte, lte, or, lt, gt } from 'drizzle-orm';
 import { db, databaseProvider, dbReady } from '@/db';
-import { roomAvailability, roomPrices, units } from '@/db/schema';
-import { monthRange } from '@/lib/pricing-core';
+import { roomAvailability, roomPrices, units, reservations } from '@/db/schema';
+import { monthRange, nextIsoDate } from '@/lib/pricing-core';
 import { PRIVATE_POOL_VILLA } from '@/lib/units';
 
 export { CURRENCY, monthRange, normalizePricePayload, priceBatchSchema, priceInputSchema, validatePriceInput, formatPrice, RATE_CODE } from '@/lib/pricing-core';
@@ -39,8 +39,9 @@ export async function getMonthlyPrices(month: string) {
     .from(roomPrices)
     .where(and(eq(roomPrices.unitId, villa.id), gte(roomPrices.date, start), lte(roomPrices.date, end)))
     .orderBy(asc(roomPrices.date));
+  const todayIso = new Date().toISOString().slice(0, 10);
   const prices = (databaseProvider === 'postgres' ? await priceQuery.execute() : priceQuery.all())
-    .filter((price) => Number.isInteger(price.amountMinorUnits) && price.amountMinorUnits > 0);
+    .filter((price) => Number.isInteger(price.amountMinorUnits) && price.amountMinorUnits > 0 && price.date >= todayIso);
 
   const availabilityQuery = db.select({
     id: roomAvailability.id,
@@ -52,7 +53,45 @@ export async function getMonthlyPrices(month: string) {
     .from(roomAvailability)
     .where(and(eq(roomAvailability.unitId, villa.id), gte(roomAvailability.date, start), lte(roomAvailability.date, end), eq(roomAvailability.status, 'sold_off')))
     .orderBy(asc(roomAvailability.date));
-  const availability = databaseProvider === 'postgres' ? await availabilityQuery.execute() : availabilityQuery.all();
+  const dbAvailability = databaseProvider === 'postgres' ? await availabilityQuery.execute() : availabilityQuery.all();
+
+  const overlapQuery = db.select({
+    id: reservations.id,
+    unitId: reservations.unitId,
+    checkInDate: reservations.checkInDate,
+    checkOutDate: reservations.checkOutDate,
+  })
+    .from(reservations)
+    .where(and(
+      eq(reservations.unitId, villa.id),
+      or(eq(reservations.bookingStatus, 'pending'), eq(reservations.bookingStatus, 'confirmed')),
+      lt(reservations.checkInDate, end),
+      gt(reservations.checkOutDate, start)
+    ));
+    
+  const overlappingReservations = databaseProvider === 'postgres' ? await overlapQuery.execute() : overlapQuery.all();
+
+  const availability = [...dbAvailability];
+
+  for (const res of overlappingReservations) {
+    let currDate = res.checkInDate;
+    while (currDate < res.checkOutDate && currDate) {
+      if (currDate >= start && currDate <= end) {
+        if (!availability.some(a => a.date === currDate)) {
+          availability.push({
+            id: `res-${res.id}-${currDate}`,
+            unitId: res.unitId,
+            date: currDate,
+            status: 'sold_off',
+            reason: 'Booked'
+          });
+        }
+      }
+      currDate = nextIsoDate(currDate) || '';
+    }
+  }
+
+  availability.sort((a, b) => a.date.localeCompare(b.date));
 
   return { month, start, end, units: [{ ...villa, displayName: PRIVATE_POOL_VILLA.displayName }], prices, availability };
 }

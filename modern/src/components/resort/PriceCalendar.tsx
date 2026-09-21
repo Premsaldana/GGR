@@ -35,10 +35,14 @@ function monthLabel(month: string) {
 export function PriceCalendar({ initialMonth }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [month, setMonth] = useState(searchParams.get('month') || initialMonth);
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayMonth = todayIso.slice(0, 7);
+  const rawMonth = searchParams.get('month') || initialMonth;
+  const [month, setMonth] = useState(rawMonth < todayMonth ? todayMonth : rawMonth);
   const [data, setData] = useState<CalendarData | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [selected, setSelected] = useState<string | null>(null);
+  const canGoBack = month > todayMonth;
 
   useEffect(() => {
     let cancelled = false;
@@ -80,14 +84,18 @@ export function PriceCalendar({ initialMonth }: Props) {
   const villa = data?.units[0];
   const priceMap = useMemo(() => new Map((data?.prices ?? []).map((price) => [price.date, price])), [data]);
   const soldOffSet = useMemo(() => new Set((data?.availability ?? []).filter((item) => item.status === 'sold_off').map((item) => item.date)), [data]);
-  const cells = useMemo<DayCell[]>(() => Array.from({ length: daysInMonth(month) }, (_, index) => {
-    const day = index + 1;
+  const startDay = month === todayMonth ? parseInt(todayIso.slice(8, 10), 10) : 1;
+  const numDays = daysInMonth(month) - startDay + 1;
+  const cells = useMemo<DayCell[]>(() => Array.from({ length: numDays }, (_, index) => {
+    const day = startDay + index;
     const date = `${month}-${String(day).padStart(2, '0')}`;
     const price = priceMap.get(date);
     const soldOff = soldOffSet.has(date);
     return { date, day, label: soldOff ? null : price ? formatPrice(price.amountMinorUnits, price.currency) : null, state: soldOff ? 'sold-off' : price && formatPrice(price.amountMinorUnits, price.currency) ? 'available' : 'unpriced' };
-  }), [month, priceMap, soldOffSet]);
-  const leadingBlanks = useMemo(() => Array.from({ length: firstWeekday(month) }, (_, index) => index), [month]);
+  }), [month, priceMap, soldOffSet, startDay]);
+  const renderStartDate = `${month}-${String(startDay).padStart(2, '0')}`;
+  const startWeekday = new Date(`${renderStartDate}T00:00:00Z`).getUTCDay();
+  const leadingBlanks = useMemo(() => Array.from({ length: startWeekday }, (_, index) => index), [startWeekday]);
   const selectedCell = cells.find((cell) => cell.date === selected);
   const selectedAvailableCell = selectedCell?.state === 'available' ? selectedCell : undefined;
   const selectedCheckOut = selectedAvailableCell ? nextIsoDate(selectedAvailableCell.date) : null;
@@ -116,7 +124,7 @@ export function PriceCalendar({ initialMonth }: Props) {
           <p className="availability-lede">Current nightly prices for the entire villa. Sold-off dates are unavailable; dates without a configured price are shown separately.</p>
         </div>
         <div className="availability-actions" aria-label="Calendar controls">
-          <button type="button" className="availability-icon-button" onClick={() => setMonth(shiftMonth(month, -1))} aria-label="Previous month"><ArrowLeft size={18} aria-hidden="true" /></button>
+          <button type="button" className="availability-icon-button" onClick={() => setMonth(shiftMonth(month, -1))} aria-label="Previous month" disabled={!canGoBack}><ArrowLeft size={18} aria-hidden="true" /></button>
           <span className="availability-month" aria-live="polite">{monthLabel(month)}</span>
           <button type="button" className="availability-icon-button" onClick={() => setMonth(shiftMonth(month, 1))} aria-label="Next month"><ArrowRight size={18} aria-hidden="true" /></button>
         </div>
