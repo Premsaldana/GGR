@@ -327,7 +327,7 @@ const InvoiceDocument = ({ invoice, snapshot, payments }: InvoicePDFProps) => {
               <Text style={styles.totalValue}>{(invoice.taxMinorUnits / 100).toFixed(2)}</Text>
             </View>
             <View style={styles.grandTotalRow}>
-              <Text style={styles.grandTotalLabel}>TOTAL INVOICE</Text>
+              <Text style={styles.grandTotalLabel}>TOTAL</Text>
               <Text style={styles.grandTotalValue}>{(invoice.totalMinorUnits / 100).toFixed(2)}</Text>
             </View>
             <Text style={styles.amountInWords}>{invoice.amountInWords}</Text>
@@ -335,33 +335,23 @@ const InvoiceDocument = ({ invoice, snapshot, payments }: InvoicePDFProps) => {
         </View>
 
         {/* Payment Summary */}
-        <View style={styles.paymentContainer}>
-          <View style={styles.paymentBox}>
-            <Text style={[styles.detailsLabel, { marginBottom: 6 }]}>Payment Status</Text>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Mode:</Text>
-              <Text style={styles.totalValue}>{resData.paymentMode || 'PROVISIONAL'}</Text>
-            </View>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Status:</Text>
-              <Text style={styles.totalValue}>{resData.bookingStatus ? resData.bookingStatus.toUpperCase() : 'PENDING'}</Text>
-            </View>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Received:</Text>
-              <Text style={styles.totalValue}>{(additionalPaid / 100).toFixed(2)}</Text>
-            </View>
-          </View>
-          <View style={[styles.paymentBox, { backgroundColor: '#F5F1E9' }]}>
-            <Text style={[styles.detailsLabel, { marginBottom: 6, color: '#B75E3C' }]}>Payable at Check-in</Text>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#B75E3C', marginBottom: 4 }}>
-              Rs {(balance / 100).toFixed(2)}
-            </Text>
-            {overpayment > 0 && (
-              <Text style={{ fontSize: 9, color: 'green', fontWeight: 'bold' }}>
-                Refund Due: {(overpayment / 100).toFixed(2)}
-              </Text>
-            )}
-          </View>
+        <View style={{
+          backgroundColor: '#F0FDF4',
+          border: '1px solid #BBF7D0',
+          padding: 12,
+          borderRadius: 4,
+          alignItems: 'center',
+          marginBottom: 20
+        }}>
+          <Text style={{
+            fontSize: 12,
+            fontWeight: 'bold',
+            color: '#166534',
+            textTransform: 'uppercase',
+            letterSpacing: 1
+          }}>
+            Payment Completed
+          </Text>
         </View>
 
         {/* Policies */}

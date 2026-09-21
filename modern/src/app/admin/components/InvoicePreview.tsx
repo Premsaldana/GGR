@@ -135,7 +135,7 @@ export function InvoicePreview({ invoiceId, reservation, calculation, lineItems,
               <span>{formatCurrency(calculation.taxMinorUnits)}</span>
             </div>
             <div className="flex justify-between py-3 mt-3 border-t border-[#E8E1D6] font-bold text-lg text-[#233B35]">
-              <span>TOTAL INVOICE</span>
+              <span>TOTAL</span>
               <span>{formatCurrency(calculation.totalMinorUnits)}</span>
             </div>
           </div>
@@ -143,47 +143,10 @@ export function InvoicePreview({ invoiceId, reservation, calculation, lineItems,
       </div>
 
       {/* Payment Summary */}
-      <div className="mb-12 bg-white border border-[#E8E1D6] rounded-sm overflow-hidden">
-        <div className="bg-[#233B35] px-6 py-4 flex items-center gap-3">
-          <CreditCard className="text-[#FFFCF6]" size={20} />
-          <h3 className="text-[#FFFCF6] font-semibold tracking-wider text-sm">PAYMENT SUMMARY</h3>
-        </div>
-        <div className="p-6 md:p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center border-b border-dashed border-gray-200 pb-3">
-                <span className="text-[#55675D]">Payment Mode</span>
-                <span className="font-semibold text-[#1D2422] bg-gray-100 px-3 py-1 rounded text-sm">
-                  {reservation.paymentMode || 'PROVISIONAL'}
-                </span>
-              </div>
-              <div className="flex justify-between items-center border-b border-dashed border-gray-200 pb-3">
-                <span className="text-[#55675D]">Status</span>
-                <span className="font-semibold text-[#1D2422]">
-                  {reservation.bookingStatus ? reservation.bookingStatus.toUpperCase() : 'PENDING'}
-                </span>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="bg-[#FFFCF6] border border-[#B75E3C] p-4 rounded-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-[#B75E3C] font-semibold text-sm tracking-wide">PAYABLE AT CHECK-IN</span>
-                  <span className="text-2xl font-bold text-[#B75E3C]">{formatCurrency(calculation.totalMinorUnits)}</span>
-                </div>
-              </div>
-              {calculation.overpaymentMinorUnits > 0 && (
-                <div className="bg-green-50 border border-green-200 p-3 rounded-sm flex justify-between items-center">
-                  <span className="text-green-700 font-semibold text-sm">EXCESS / REFUND DUE</span>
-                  <span className="font-bold text-green-700">{formatCurrency(calculation.overpaymentMinorUnits)}</span>
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="mt-6 bg-gray-50 p-4 rounded text-center text-sm border border-gray-100">
-            <span className="text-[#718779] mr-2">Amount in Words:</span>
-            <span className="italic font-medium text-[#233B35]">{calculation.amountInWords}</span>
-          </div>
-        </div>
+      <div className="mb-12 bg-[#F0FDF4] border border-[#BBF7D0] p-4 rounded-sm text-center">
+        <span className="text-[#166534] font-bold text-sm tracking-widest uppercase">
+          Payment Completed
+        </span>
       </div>
 
       {/* Placeholders for Future PDF */}
