@@ -80,7 +80,7 @@ export function PaymentUploadForm({ token, hasPendingProof }: { token: string, h
         {error && <p className="text-xs text-red-600">{error}</p>}
         
         <Button type="submit" loading={isUploading} className="w-full">
-          {isUploading ? 'Uploading...' : 'Submit Proof'}
+          {isUploading ? 'Uploading...' : 'Submit Screenshot'}
         </Button>
       </form>
     </div>
