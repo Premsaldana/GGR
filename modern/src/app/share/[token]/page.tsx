@@ -127,7 +127,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
               </div>
               <p className="text-lg font-semibold text-[#2E7D32] mb-1">Payment Verified</p>
-              <p className="text-sm text-[#388E3C] mb-6 text-center">Your payment has been received and verified by the resort.</p>
+              <p className="text-sm text-[#388E3C] mb-10 text-center">Your payment has been received and verified by the resort.</p>
               
               <Button as="a" href={`/api/share/${token}/download`} target="_blank" rel="noopener noreferrer" className="w-full">
                 Download Booking Voucher (PDF)
