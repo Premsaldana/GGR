@@ -24,6 +24,8 @@ export default function ReservationDetailClient({ reservation, lineItems, unit, 
   const [isIssuing, setIsIssuing] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
   const [error, setError] = useState('');
   
   // Proof action states
@@ -67,21 +69,25 @@ export default function ReservationDetailClient({ reservation, lineItems, unit, 
   };
 
   const handleVerify = async (proofId: string) => {
+    setIsVerifying(true);
     setError('');
     const res = await verifyProofAction(proofId, verifyAmount * 100, paymentMode, paymentReference, adminNote) as any;
     if (res.error) setError(res.error);
     else {
       setActiveProofId(null);
     }
+    setIsVerifying(false);
   };
 
   const handleReject = async (proofId: string) => {
+    setIsRejecting(true);
     setError('');
     const res = await rejectProofAction(proofId, adminNote, rejectResubmit) as any;
     if (res.error) setError(res.error);
     else {
       setActiveProofId(null);
     }
+    setIsRejecting(false);
   };
 
   const handleFinalize = async () => {
@@ -332,8 +338,14 @@ export default function ReservationDetailClient({ reservation, lineItems, unit, 
                           </label>
                           <div className="flex space-x-2">
                             <button type="button" onClick={() => setActiveProofId(null)} className="px-4 py-2 text-sm border rounded-md text-gray-600 hover:bg-gray-50">Cancel</button>
-                            <button type="submit" name="action" value="reject" className="px-4 py-2 text-sm bg-red-600 text-white font-semibold rounded-md hover:bg-red-700">Reject</button>
-                            <button type="submit" name="action" value="verify" className="px-4 py-2 text-sm bg-green-600 text-white font-semibold rounded-md hover:bg-green-700">Verify Payment</button>
+                            <button type="submit" name="action" value="reject" disabled={isRejecting || isVerifying} className="px-4 py-2 text-sm bg-red-600 text-white font-semibold rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center gap-2">
+                              {isRejecting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                              {isRejecting ? 'Rejecting...' : 'Reject'}
+                            </button>
+                            <button type="submit" name="action" value="verify" disabled={isRejecting || isVerifying} className="px-4 py-2 text-sm bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center gap-2">
+                              {isVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                              {isVerifying ? 'Verifying...' : 'Verify Payment'}
+                            </button>
                           </div>
                         </div>
                       </form>
