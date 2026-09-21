@@ -189,6 +189,7 @@ const styles = StyleSheet.create({
 
   // --- Policies ---
   policySection: {
+    marginTop: 'auto',
     backgroundColor: '#FFFCF6',
     border: '1px solid #E8E1D6',
     padding: 10,
@@ -217,10 +218,7 @@ const styles = StyleSheet.create({
 
   // --- Footer ---
   footer: {
-    position: 'absolute',
-    bottom: 30,
-    left: 40,
-    right: 40,
+    marginTop: 20,
     textAlign: 'center',
     borderTop: '1px solid #E8E1D6',
     paddingTop: 10
@@ -386,7 +384,7 @@ const InvoiceDocument = ({ invoice, snapshot, payments }: InvoicePDFProps) => {
         </View>
 
         {/* Footer */}
-        <View style={styles.footer} fixed>
+        <View style={styles.footer}>
           <Text style={styles.footerText}>Thank you for choosing Goa Garden Resort!</Text>
           <Text style={styles.footerText}>Queries? Call 91-7813093075 or goagardenresort@gmail.com</Text>
         </View>
