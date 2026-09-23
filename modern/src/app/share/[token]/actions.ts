@@ -8,6 +8,7 @@ import { paymentProofStorage, paymentProofProvider, generateStorageKey } from '@
 
 import { uploadProofSchema } from '@/lib/validations';
 import { publishRealtimeEvent } from '@/lib/realtime-publish';
+import { notifyAdminsOfProofUpload } from '@/lib/push';
 
 export async function uploadProofAction(formData: FormData) {
   try {
@@ -112,10 +113,11 @@ export async function uploadProofAction(formData: FormData) {
       reservationId: reservation.id,
       proof: proof ? { ...proof } : undefined,
     });
+    await notifyAdminsOfProofUpload(reservation.reservationNumber, reservation.id);
 
     return { success: true };
-  } catch (err: any) {
-    console.error('Upload proof error:', err.message);
+  } catch (err: unknown) {
+    console.error('Upload proof error:', err instanceof Error ? err.message : err);
     return { error: 'Server error during upload', success: false };
   }
 }

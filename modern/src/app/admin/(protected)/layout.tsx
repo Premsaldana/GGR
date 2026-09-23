@@ -6,6 +6,7 @@ import { Calendar, LayoutDashboard, LogOut, FileText, Tag } from 'lucide-react';
 import { logout } from '@/app/admin/actions';
 import AdminMobileNav from '@/app/admin/components/AdminMobileNav';
 import AdminPwaRuntime from '@/app/admin/components/AdminPwaRuntime';
+import AdminPushSetup from '@/app/admin/components/AdminPushSetup';
 
 export const metadata: Metadata = {
   title: 'Admin',
@@ -50,7 +51,10 @@ export default async function ProtectedLayout({ children }: { children: React.Re
       </aside>
       <main className="relative flex-1 overflow-auto">
         <AdminMobileNav email={session.email} />
-        <div className="relative mx-auto h-full max-w-7xl p-4 md:p-8">{children}</div>
+        <div className="relative mx-auto h-full max-w-7xl p-4 md:p-8">
+          <div className="mb-4 flex justify-end"><AdminPushSetup /></div>
+          {children}
+        </div>
       </main>
     </div>
   );

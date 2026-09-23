@@ -13,6 +13,33 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+self.addEventListener('push', (event) => {
+  const data = event.data ? event.data.json() : {};
+  event.waitUntil(self.registration.showNotification(data.title || 'GGR Admin', {
+    body: data.body || 'There is a new admin update.',
+    icon: '/icon.jpg',
+    badge: '/logo.png',
+    tag: data.tag || 'ggr-admin-update',
+    data: { url: data.url || '/admin' },
+    requireInteraction: true,
+  }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = new URL(event.notification.data?.url || '/admin', self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      const existing = clients.find((client) => 'focus' in client);
+      if (existing) {
+        existing.navigate(targetUrl);
+        return existing.focus();
+      }
+      return self.clients.openWindow(targetUrl);
+    })
+  );
+});
+
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET' || !request.url.startsWith(self.location.origin)) return;

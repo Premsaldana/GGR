@@ -191,3 +191,12 @@ export const paymentProofs = pgTable('payment_proofs', {
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull(),
 });
+
+export const pushSubscriptions = pgTable('push_subscriptions', {
+  id: text('id').primaryKey(),
+  endpoint: text('endpoint').notNull().unique(),
+  p256dh: text('p256dh').notNull(),
+  auth: text('auth').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull(),
+});

@@ -18,5 +18,6 @@ export const shareLinks = selected.shareLinks as typeof sqliteSchema.shareLinks;
 export const auditEvents = selected.auditEvents as typeof sqliteSchema.auditEvents;
 export const authChallenges = selected.authChallenges as typeof sqliteSchema.authChallenges;
 export const paymentProofs = selected.paymentProofs as typeof sqliteSchema.paymentProofs;
+export const pushSubscriptions = selected.pushSubscriptions as typeof sqliteSchema.pushSubscriptions;
 
 export const schema = selected;
