@@ -23,6 +23,17 @@ export interface InvoiceCalculationResult {
   amountInWords: string;
 }
 
+export interface InvoicePaymentSummary {
+  totalMinorUnits: number;
+  securityDepositMinorUnits: number;
+  amountPaidMinorUnits: number;
+  balanceMinorUnits: number;
+  payableAtCheckInMinorUnits: number;
+  totalDueWithDepositMinorUnits: number;
+  overpaymentMinorUnits: number;
+  isPaidInFull: boolean;
+}
+
 export function toPaise(rupees: number): number {
   if (typeof rupees !== 'number' || isNaN(rupees) || !isFinite(rupees) || rupees < 0) {
     throw new Error('Invalid rupee amount');
@@ -108,5 +119,36 @@ export function calculateInvoice(input: InvoiceCalculationInput): InvoiceCalcula
     balanceMinorUnits,
     overpaymentMinorUnits,
     amountInWords: convertRupeesToWords(Math.floor(totalMinorUnits / 100)),
+  };
+}
+
+/**
+ * Computes the receipt figures from the invoice total, deposit, and completed
+ * payment records. The security deposit is refundable and is therefore not
+ * included in the accommodation balance.
+ */
+export function calculateInvoicePaymentSummary(
+  invoice: { totalMinorUnits: number; securityDepositMinorUnits?: number | null; advanceMinorUnits?: number | null },
+  payments: Array<{ amountMinorUnits: number; paymentStatus?: string | null }>,
+): InvoicePaymentSummary {
+  const totalMinorUnits = Math.max(0, Number(invoice.totalMinorUnits) || 0);
+  const securityDepositMinorUnits = Math.max(0, Number(invoice.securityDepositMinorUnits) || 0);
+  const advanceMinorUnits = Math.max(0, Number(invoice.advanceMinorUnits) || 0);
+  const recordedPaymentsMinorUnits = payments
+    .filter((payment) => !payment.paymentStatus || payment.paymentStatus === 'completed')
+    .reduce((sum, payment) => sum + Math.max(0, Number(payment.amountMinorUnits) || 0), 0);
+  const amountPaidMinorUnits = advanceMinorUnits + recordedPaymentsMinorUnits;
+  const balanceMinorUnits = Math.max(0, totalMinorUnits - amountPaidMinorUnits);
+  const overpaymentMinorUnits = Math.max(0, amountPaidMinorUnits - totalMinorUnits);
+
+  return {
+    totalMinorUnits,
+    securityDepositMinorUnits,
+    amountPaidMinorUnits,
+    balanceMinorUnits,
+    payableAtCheckInMinorUnits: balanceMinorUnits + securityDepositMinorUnits,
+    totalDueWithDepositMinorUnits: totalMinorUnits + securityDepositMinorUnits,
+    overpaymentMinorUnits,
+    isPaidInFull: balanceMinorUnits === 0,
   };
 }

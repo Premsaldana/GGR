@@ -1,7 +1,7 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { db, databaseProvider, dbReady } from '@/db';
-import { shareLinks, invoices, qrPaymentArtifacts, reservations, units } from '@/db/schema';
+import { shareLinks, invoices, invoicePayments, qrPaymentArtifacts, reservations, units } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { QRCodeSVG } from 'qrcode.react';
 import crypto from 'crypto';
@@ -9,6 +9,7 @@ import { PaymentUploadForm } from './PaymentUploadForm';
 import { paymentProofs } from '@/db/schema';
 import { GuestRealtimeVerification } from './GuestRealtimeVerification';
 import { Button } from '@/components/ui/Button';
+import { calculateInvoicePaymentSummary } from '@/lib/invoice';
 
 // Ensure the page isn't indexed by search engines
 export const metadata = {
@@ -35,6 +36,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
   let unitName = 'Unit';
   let reservationData: any;
   let invoiceData: any;
+  let paymentSummary = { totalMinorUnits: 0, securityDepositMinorUnits: 0, amountPaidMinorUnits: 0, balanceMinorUnits: 0, payableAtCheckInMinorUnits: 0, totalDueWithDepositMinorUnits: 0, overpaymentMinorUnits: 0, isPaidInFull: false };
 
   try {
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
@@ -49,6 +51,10 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
     const invoice = databaseProvider === 'postgres' ? (await dbReady, (await invoiceQuery.execute())[0]) : invoiceQuery.get();
     if (!invoice) return notFound();
     invoiceData = invoice;
+
+    const paymentsQuery = db.select().from(invoicePayments).where(eq(invoicePayments.invoiceId, invoice.id));
+    const payments = databaseProvider === 'postgres' ? (await dbReady, await paymentsQuery.execute()) : paymentsQuery.all();
+    paymentSummary = calculateInvoicePaymentSummary(invoice, payments);
 
     const reservationQuery = db.select().from(reservations).where(eq(reservations.id, invoice.reservationId));
     const reservation = databaseProvider === 'postgres' ? (await dbReady, (await reservationQuery.execute())[0]) : reservationQuery.get();
@@ -114,10 +120,11 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                   {reservationData.checkInDate} to {reservationData.checkOutDate}
                 </span>
               </div>
-              <div className="flex justify-between items-start">
-                <span className="text-gray-500">Total Payable</span>
-                <span className="font-medium text-right">Rs.{invoiceData.totalMinorUnits / 100}</span>
-              </div>
+              <div className="flex justify-between items-start"><span className="text-gray-500">Total</span><span className="font-medium text-right">Rs.{paymentSummary.totalMinorUnits / 100}</span></div>
+              <div className="flex justify-between items-start"><span className="text-gray-500">Payment received</span><span className="font-medium text-right">Rs.{paymentSummary.amountPaidMinorUnits / 100}</span></div>
+              <div className="flex justify-between items-start"><span className="text-gray-500">Balance</span><span className="font-medium text-right">Rs.{paymentSummary.balanceMinorUnits / 100}</span></div>
+              <div className="flex justify-between items-start"><span className="text-gray-500">Security deposit</span><span className="font-medium text-right">Rs.{paymentSummary.securityDepositMinorUnits / 100}</span></div>
+              <div className="flex justify-between items-start"><span className="text-gray-500">Payable at check-in</span><span className="font-semibold text-right">Rs.{paymentSummary.payableAtCheckInMinorUnits / 100}</span></div>
             </div>
           </div>
 
@@ -126,8 +133,8 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
               <div className="w-12 h-12 rounded-full bg-[#4CAF50] text-white flex items-center justify-center mb-4">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
               </div>
-              <p className="text-lg font-semibold text-[#2E7D32] mb-1">Payment Verified</p>
-              <p className="text-sm text-[#388E3C] mb-10 text-center">Your payment has been received and verified by the resort.</p>
+              <p className="text-lg font-semibold text-[#2E7D32] mb-1">{paymentSummary.isPaidInFull ? 'Payment Complete' : 'Payment Verified'}</p>
+              <p className="text-sm text-[#388E3C] mb-4 text-center">{paymentSummary.isPaidInFull ? `Your full payment of Rs.${paymentSummary.amountPaidMinorUnits / 100} has been received.` : `Your payment of Rs.${paymentSummary.amountPaidMinorUnits / 100} has been received. Balance payable at check-in: Rs.${paymentSummary.payableAtCheckInMinorUnits / 100}.`}</p>
               
               <Button as="a" href={`/api/share/${token}/download`} target="_blank" rel="noopener noreferrer" className="w-full">
                 Download Booking Voucher (PDF)

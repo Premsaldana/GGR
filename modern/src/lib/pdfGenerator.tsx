@@ -1,5 +1,6 @@
 import React from 'react';
 import { Page, Text, View, Document, StyleSheet, renderToStream } from '@react-pdf/renderer';
+import { calculateInvoicePaymentSummary } from '@/lib/invoice';
 
 const styles = StyleSheet.create({
   page: { 
@@ -240,9 +241,7 @@ const InvoiceDocument = ({ invoice, snapshot, payments }: InvoicePDFProps) => {
   const lineItems = snapshot?.input?.lineItems || snapshot?.lineItems || [];
   const resData = snapshot || {};
   
-  const additionalPaid = payments.reduce((acc, p) => acc + p.amountMinorUnits, 0);
-  const balance = Math.max(0, invoice.totalMinorUnits - additionalPaid);
-  const overpayment = additionalPaid > invoice.totalMinorUnits ? additionalPaid - invoice.totalMinorUnits : 0;
+  const paymentSummary = calculateInvoicePaymentSummary(invoice, payments);
 
   return (
     <Document>
@@ -334,22 +333,21 @@ const InvoiceDocument = ({ invoice, snapshot, payments }: InvoicePDFProps) => {
 
         {/* Payment Summary */}
         <View style={{
-          backgroundColor: '#F0FDF4',
-          border: '1px solid #BBF7D0',
+          backgroundColor: paymentSummary.isPaidInFull ? '#F0FDF4' : '#F0FDFA',
+          border: paymentSummary.isPaidInFull ? '1px solid #BBF7D0' : '1px solid #99F6E4',
           padding: 12,
           borderRadius: 4,
-          alignItems: 'center',
           marginBottom: 20
         }}>
-          <Text style={{
-            fontSize: 12,
-            fontWeight: 'bold',
-            color: '#166534',
-            textTransform: 'uppercase',
-            letterSpacing: 1
-          }}>
-            Payment Completed
+          <Text style={{ fontSize: 12, fontWeight: 'bold', color: paymentSummary.isPaidInFull ? '#166534' : '#0F766E', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+            {paymentSummary.isPaidInFull ? 'Payment Complete' : 'Partial Payment Received'}
           </Text>
+          <View style={styles.totalRow}><Text style={styles.totalLabel}>Total</Text><Text style={styles.totalValue}>{(paymentSummary.totalMinorUnits / 100).toFixed(2)}</Text></View>
+          <View style={styles.totalRow}><Text style={styles.totalLabel}>Payment received</Text><Text style={styles.totalValue}>{(paymentSummary.amountPaidMinorUnits / 100).toFixed(2)}</Text></View>
+          <View style={styles.totalRow}><Text style={styles.totalLabel}>Balance</Text><Text style={styles.totalValue}>{(paymentSummary.balanceMinorUnits / 100).toFixed(2)}</Text></View>
+          <View style={styles.totalRow}><Text style={styles.totalLabel}>Security deposit (refundable)</Text><Text style={styles.totalValue}>{(paymentSummary.securityDepositMinorUnits / 100).toFixed(2)}</Text></View>
+          <View style={styles.grandTotalRow}><Text style={styles.grandTotalLabel}>Payable at check-in</Text><Text style={styles.grandTotalValue}>{(paymentSummary.payableAtCheckInMinorUnits / 100).toFixed(2)}</Text></View>
+          {paymentSummary.overpaymentMinorUnits > 0 && <Text style={styles.amountInWords}>Overpayment recorded: {(paymentSummary.overpaymentMinorUnits / 100).toFixed(2)}</Text>}
         </View>
 
         {/* Policies */}

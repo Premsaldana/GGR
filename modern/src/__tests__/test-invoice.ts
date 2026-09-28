@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
-import { calculateInvoice, convertRupeesToWords } from '../lib/invoice';
+import { calculateInvoice, calculateInvoicePaymentSummary, convertRupeesToWords } from '../lib/invoice';
 import { users, invoices, auditEvents, reservations, guests, units, reservationLineItems } from '../db/schema';
 import crypto from 'crypto';
 
@@ -181,6 +181,31 @@ async function runInvoiceTests() {
     console.log('✅ Test 8 Passed');
   } else {
     console.error('❌ Test 8 Failed', calc8);
+  }
+
+  // Test 9: Receipt summary keeps partial payments separate from invoice total
+  console.log('Test 9: Full and partial payment receipt summaries');
+  const partialSummary = calculateInvoicePaymentSummary(
+    { totalMinorUnits: 2900000, securityDepositMinorUnits: 500000, advanceMinorUnits: 0 },
+    [{ amountMinorUnits: 1500000, paymentStatus: 'completed' }],
+  );
+  const fullSummary = calculateInvoicePaymentSummary(
+    { totalMinorUnits: 2900000, securityDepositMinorUnits: 500000, advanceMinorUnits: 0 },
+    [{ amountMinorUnits: 2900000, paymentStatus: 'completed' }],
+  );
+  if (
+    partialSummary.amountPaidMinorUnits === 1500000 &&
+    partialSummary.balanceMinorUnits === 1400000 &&
+    partialSummary.payableAtCheckInMinorUnits === 1900000 &&
+    !partialSummary.isPaidInFull &&
+    fullSummary.amountPaidMinorUnits === 2900000 &&
+    fullSummary.balanceMinorUnits === 0 &&
+    fullSummary.payableAtCheckInMinorUnits === 500000 &&
+    fullSummary.isPaidInFull
+  ) {
+    console.log('✅ Test 9 Passed');
+  } else {
+    console.error('❌ Test 9 Failed', { partialSummary, fullSummary });
   }
 
   console.log('--- Tests Complete ---');
