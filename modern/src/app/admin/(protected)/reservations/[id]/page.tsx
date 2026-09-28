@@ -7,9 +7,11 @@ import { calculateInvoiceAction } from '../../calendar/actions';
 
 import { requireAdmin } from '@/lib/session';
 
-export default async function ReservationDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ReservationDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ view?: string | string[] }> }) {
   await requireAdmin();
   const reservationId = (await params).id;
+  const requestedView = (await searchParams).view;
+  const initialView = requestedView === 'preview' || (Array.isArray(requestedView) && requestedView.includes('preview')) ? 'preview' : 'details';
 
   const reservationQuery = db.select().from(reservations).where(eq(reservations.id, reservationId));
   const reservation = databaseProvider === 'postgres' ? (await dbReady, (await reservationQuery.execute())[0]) : reservationQuery.get();
@@ -72,6 +74,7 @@ export default async function ReservationDetailPage({ params }: { params: Promis
         draftCalculation={draftCalculation as any} 
         issuedInvoice={issuedInvoice} 
         proofs={proofs}
+        initialView={initialView}
       />
     </div>
   );
