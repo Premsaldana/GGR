@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { InvoicePreview } from '../../../components/InvoicePreview';
+import { QRPaymentFlow } from '../../../components/QRPaymentFlow';
 import { issueInvoiceAction } from '../../calendar/actions';
 import { InvoiceCalculationResult } from '@/lib/invoice';
 import { verifyProofAction, rejectProofAction, finalizeInvoiceAction, deleteReservationAction } from './actions';
@@ -222,6 +223,15 @@ export default function ReservationDetailClient({ reservation, lineItems, unit, 
               </button>
             ) : null}
           </div>
+
+          {!isDraft && issuedInvoice && (
+            <QRPaymentFlow
+              invoiceId={issuedInvoice.id}
+              totalMinorUnits={currentCalculation.totalMinorUnits}
+              balanceMinorUnits={currentCalculation.balanceMinorUnits}
+              securityDepositMinorUnits={currentCalculation.securityDepositMinorUnits}
+            />
+          )}
 
           <InvoicePreview 
             invoiceId={issuedInvoice?.id}

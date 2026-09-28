@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { generateQRAction, createShareLinkAction, getShareLinksAction, getLatestQRAction, revokeShareLinkAction } from '../(protected)/calendar/actions-qr';
-import { Loader2, Copy, CheckCircle2, Link as LinkIcon, RefreshCw } from 'lucide-react';
+import { Loader2, CheckCircle2, Link as LinkIcon, RefreshCw } from 'lucide-react';
 
 interface QRPaymentFlowProps {
   invoiceId: string;
@@ -82,15 +82,13 @@ export function QRPaymentFlow({ invoiceId, totalMinorUnits, balanceMinorUnits, s
 
   return (
     <div className="mt-8 border-t border-[#E8E1D6] pt-6 bg-white p-6 rounded shadow-sm">
-      <h3 className="font-semibold text-lg mb-4 text-[#1D2422]">Payment Collection & Sharing (Slice 4A)</h3>
+      <h3 className="font-semibold text-lg mb-4 text-[#1D2422]">Payment Collection & Sharing</h3>
       
       {error && <div className="text-red-600 bg-red-50 p-3 rounded mb-4 text-sm">{error}</div>}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        
-        {/* Left Side: QR Generation */}
+      <div className="space-y-5">
         <div className="space-y-4">
-          <h4 className="font-medium text-[#233B35] border-b pb-2">Generate UPI QR</h4>
+          <h4 className="font-medium text-[#233B35] border-b pb-2">Generate guest payment access</h4>
           
           <div className="bg-gray-50 p-3 text-sm rounded border border-gray-200">
             <p><strong>Total:</strong> ₹{totalMinorUnits / 100}</p>
@@ -113,12 +111,12 @@ export function QRPaymentFlow({ invoiceId, totalMinorUnits, balanceMinorUnits, s
               />
             </div>
 
-            <button 
+            <button
               type="submit"
               disabled={loading}
-              className="admin-button admin-button--dark w-full mt-4"
+              className="admin-button admin-button--dark w-full mt-4 flex items-center justify-center gap-2"
             >
-              {loading ? <Loader2 size={16} className="animate-spin" /> : qrArtifact ? <><RefreshCw size={16}/> Regenerate QR</> : "Generate QR"}
+              {loading ? <Loader2 size={16} className="animate-spin" /> : qrArtifact ? <><RefreshCw size={16}/> Regenerate QR & Share Link</> : <><LinkIcon size={16}/> Generate QR & Share Link</>}
             </button>
           </form>
 
@@ -136,22 +134,10 @@ export function QRPaymentFlow({ invoiceId, totalMinorUnits, balanceMinorUnits, s
           )}
         </div>
 
-        {/* Right Side: Share Link */}
         <div className="space-y-4">
-          <h4 className="font-medium text-[#233B35] border-b pb-2">Shareable Guest Bill</h4>
-          
           <p className="text-sm text-gray-600">
-            Create a secure, read-only link for the guest to view their bill and scan the active QR code.
+            This creates a secure, read-only guest link and an active UPI QR code for the amount above. The link is copied automatically when possible.
           </p>
-
-          <button 
-            onClick={handleGenerateLink}
-            disabled={loading}
-            className="admin-button admin-button--primary w-full"
-          >
-            {loading ? <Loader2 size={16} className="animate-spin" /> : <><LinkIcon size={16} /> Generate Share Link</>}
-          </button>
-
           {copiedToken && (
             <p className="text-sm text-green-600 flex items-center gap-1">
               <CheckCircle2 size={14}/> Link copied to clipboard!

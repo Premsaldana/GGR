@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { InvoiceCalculationResult } from '@/lib/invoice';
-import { QRPaymentFlow } from './QRPaymentFlow';
 import { PaymentTracker } from './PaymentTracker';
 import { Calendar, Users, MapPin, CreditCard, AlertCircle } from 'lucide-react';
 
@@ -167,16 +166,10 @@ export function InvoicePreview({ invoiceId, reservation, calculation, lineItems,
       </div>
 
       {!isDraft && invoiceId && (
-        <div className="mb-12 space-y-8">
+        <div className="mb-12">
           <PaymentTracker
             invoiceId={invoiceId}
             totalMinorUnits={calculation.totalMinorUnits}
-          />
-          <QRPaymentFlow 
-            invoiceId={invoiceId} 
-            totalMinorUnits={calculation.totalMinorUnits}
-            balanceMinorUnits={calculation.balanceMinorUnits}
-            securityDepositMinorUnits={calculation.securityDepositMinorUnits}
           />
         </div>
       )}
