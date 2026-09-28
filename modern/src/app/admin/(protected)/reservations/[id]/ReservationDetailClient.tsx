@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { InvoicePreview } from '../../../components/InvoicePreview';
 import { QRPaymentFlow } from '../../../components/QRPaymentFlow';
@@ -21,7 +21,9 @@ type Props = {
 
 export default function ReservationDetailClient({ reservation, lineItems, unit, draftCalculation, issuedInvoice, proofs }: Props) {
   const router = useRouter();
-  const [viewState, setViewState] = useState<'details' | 'preview' | 'proofs'>('details');
+  const searchParams = useSearchParams();
+  const initialView = searchParams.get('view') === 'preview' ? 'preview' : 'details';
+  const [viewState, setViewState] = useState<'details' | 'preview' | 'proofs'>(initialView);
   const [isIssuing, setIsIssuing] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
