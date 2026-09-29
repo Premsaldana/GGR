@@ -65,6 +65,10 @@ export function StaySearch() {
         const dates = payloads.flatMap((payload) => (payload.availability || [])
           .filter((entry: { status?: string }) => entry.status === "sold_off")
           .map((entry: { date: string }) => new Date(`${entry.date}T00:00:00`)));
+        setRange((currentRange) => {
+          const includesSoldOffDate = (date: Date | undefined) => date && dates.some((soldOffDate) => soldOffDate.toDateString() === date.toDateString());
+          return includesSoldOffDate(currentRange?.from) || includesSoldOffDate(currentRange?.to) ? undefined : currentRange;
+        });
         setSoldOffDates(dates);
       })
       .catch(() => {
