@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, Users, MapPin, Check } from 'lucide-react';
 import { checkAvailability } from '@/lib/availability';
+import { getStayPricing } from '@/lib/pricing';
 import { siteConfig } from '@/content/site';
 
 export const metadata = {
@@ -35,6 +36,17 @@ export default async function StayOverviewPage({ searchParams }: { searchParams:
     const end = new Date(checkOut);
     nights = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
   }
+
+  const stayPricing = checkIn && checkOut
+    ? await getStayPricing(checkIn, checkOut)
+    : { hasCompletePricing: false, nightlyPrices: [], totalMinorUnits: 0 };
+  const formatMoney = (minorUnits: number) => `₹${(minorUnits / 100).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+  const nightlyAmounts = stayPricing.nightlyPrices.map((price) => price.amountMinorUnits);
+  const nightlyLabel = nightlyAmounts.length > 0 && nightlyAmounts.every((amount) => amount === nightlyAmounts[0])
+    ? `${formatMoney(nightlyAmounts[0])} per night`
+    : nightlyAmounts.length > 0
+      ? `${formatMoney(Math.min(...nightlyAmounts))}–${formatMoney(Math.max(...nightlyAmounts))} per night`
+      : 'Price shared after enquiry';
 
   const proceedUrl = `/contact?checkIn=${checkIn}&checkOut=${checkOut}&adults=${adults}&children=${children}&rooms=1&unit=private-pool-villa`;
 
@@ -79,7 +91,14 @@ export default async function StayOverviewPage({ searchParams }: { searchParams:
                 </div>
                 <div className="overview-card__footer">
                   <div className="overview-card__price">
-                    <span className="overview-card__price-label">Price shared after enquiry</span>
+                    <div className="overview-card__price-label">
+                      {stayPricing.hasCompletePricing ? (
+                        <>
+                          <strong>{nightlyLabel}</strong>
+                          <span>{formatMoney(stayPricing.totalMinorUnits)} total for {nights} night{nights > 1 ? 's' : ''}</span>
+                        </>
+                      ) : 'Price shared after enquiry'}
+                    </div>
                   </div>
                   {/* Since this is a single unit, we just proceed directly or mark it selected */}
                   <Link href={proceedUrl} className="button button--sun">Select Villa</Link>

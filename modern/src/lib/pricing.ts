@@ -2,6 +2,7 @@ import { and, asc, eq, gte, lte, or, lt, gt } from 'drizzle-orm';
 import { db, databaseProvider, dbReady } from '@/db';
 import { roomAvailability, roomPrices, units, reservations } from '@/db/schema';
 import { monthRange, nextIsoDate } from '@/lib/pricing-core';
+import { RATE_CODE } from '@/lib/pricing-core';
 import { PRIVATE_POOL_VILLA } from '@/lib/units';
 
 export { CURRENCY, monthRange, normalizePricePayload, priceBatchSchema, priceInputSchema, validatePriceInput, formatPrice, RATE_CODE } from '@/lib/pricing-core';
@@ -104,6 +105,30 @@ export async function getPriceByKey(unitId: string, rateCode: string, date: stri
     return rows[0];
   }
   return query.get();
+}
+
+export async function getStayPricing(checkIn: string, checkOut: string) {
+  const villa = await getPrivatePoolVilla();
+  if (!villa || checkOut <= checkIn) return { hasCompletePricing: false, nightlyPrices: [], totalMinorUnits: 0 };
+
+  const priceQuery = db.select({ date: roomPrices.date, amountMinorUnits: roomPrices.amountMinorUnits })
+    .from(roomPrices)
+    .where(and(
+      eq(roomPrices.unitId, villa.id),
+      eq(roomPrices.rateCode, RATE_CODE),
+      gte(roomPrices.date, checkIn),
+      lt(roomPrices.date, checkOut),
+    ))
+    .orderBy(asc(roomPrices.date));
+  const nightlyPrices = databaseProvider === 'postgres' ? await priceQuery.execute() : priceQuery.all();
+  const nights = Math.max(0, Math.round((new Date(`${checkOut}T00:00:00Z`).getTime() - new Date(`${checkIn}T00:00:00Z`).getTime()) / (1000 * 60 * 60 * 24)));
+  const hasCompletePricing = nightlyPrices.length === nights && nightlyPrices.every((price) => Number.isInteger(price.amountMinorUnits) && price.amountMinorUnits > 0);
+
+  return {
+    hasCompletePricing,
+    nightlyPrices,
+    totalMinorUnits: hasCompletePricing ? nightlyPrices.reduce((total, price) => total + price.amountMinorUnits, 0) : 0,
+  };
 }
 
 export type MonthlyPrices = Awaited<ReturnType<typeof getMonthlyPrices>>;

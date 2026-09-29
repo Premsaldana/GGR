@@ -316,6 +316,16 @@
   font-size: 1rem;
   font-weight: 600;
 }
+.overview-card__price-label strong,
+.overview-card__price-label span {
+  display: block;
+}
+.overview-card__price-label span {
+  margin-top: 0.25rem;
+  color: rgba(7, 23, 19, 0.62);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
 
 /* Booking Summary */
 .booking-summary {
