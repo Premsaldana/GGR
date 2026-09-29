@@ -58,7 +58,7 @@ export function StaySearch() {
     const monthKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
     const nextMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1);
 
-    Promise.all([monthKey(calendarMonth), monthKey(nextMonth)].map((month) => fetch(`/api/prices?month=${month}`)))
+    Promise.all([monthKey(calendarMonth), monthKey(nextMonth)].map((month) => fetch(`/api/prices?month=${month}`, { cache: "no-store" })))
       .then(async (responses) => {
         const payloads = await Promise.all(responses.map((response) => response.ok ? response.json() : Promise.resolve({ availability: [] })));
         if (cancelled) return;
@@ -129,7 +129,7 @@ export function StaySearch() {
     }
 
     try {
-      const res = await fetch(`/api/availability?checkIn=${checkIn}&checkOut=${checkOut}&rooms=${rooms}`);
+      const res = await fetch(`/api/availability?checkIn=${checkIn}&checkOut=${checkOut}&rooms=${rooms}`, { cache: "no-store" });
       const json = await res.json();
 
       if (json.available) {
