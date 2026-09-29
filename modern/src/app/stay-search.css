@@ -149,10 +149,50 @@
 }
 
 /* React Day Picker Overrides for Booking.com style */
+.stay-search-v2__popover--date {
+  width: min(760px, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  padding: 0.75rem;
+  overflow-x: auto;
+}
+.stay-search-v2__availability-note {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.25rem 0.75rem 0.5rem;
+  color: #8f1d14;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.stay-search-v2__availability-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #d92d20;
+}
 .rdp-root {
   --rdp-accent-color: #0071c2;
   --rdp-background-color: #f0f7fb;
-  margin: 1rem;
+  margin: 0.5rem;
+}
+.rdp-months {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1.5rem;
+}
+.rdp-month {
+  flex: 0 0 auto;
+}
+.rdp-day_button.stay-search-v2__sold-off,
+.stay-search-v2__sold-off .rdp-day_button {
+  color: #b42318 !important;
+  background: #fee4e2 !important;
+  border: 1px solid #fda29b !important;
+  border-radius: 999px;
+  cursor: not-allowed;
+  opacity: 1 !important;
 }
 
 @media (max-width: 900px) {

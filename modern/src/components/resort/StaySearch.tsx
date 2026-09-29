@@ -26,11 +26,12 @@ function useClickOutside(ref: React.RefObject<HTMLElement | null>, handler: () =
 
 export function StaySearch() {
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
   const today = new Date().toISOString().slice(0, 10);
   const tomorrow = nextIsoDate(today) || "";
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [soldOffDates, setSoldOffDates] = useState<Date[]>([]);
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date(today));
 
   // State
   const [range, setRange] = useState<DateRange | undefined>(() => {
@@ -41,7 +42,7 @@ export function StaySearch() {
   
   const [adults, setAdults] = useState(2);
   const [childrenCount, setChildrenCount] = useState(0);
-  const [rooms, setRooms] = useState(1);
+  const rooms = 1;
 
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [occupancyOpen, setOccupancyOpen] = useState(false);
@@ -52,8 +53,45 @@ export function StaySearch() {
   useClickOutside(dateRef, () => setDatePickerOpen(false));
   useClickOutside(occupancyRef, () => setOccupancyOpen(false));
 
+  useEffect(() => {
+    let cancelled = false;
+    const monthKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    const nextMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1);
+
+    Promise.all([monthKey(calendarMonth), monthKey(nextMonth)].map((month) => fetch(`/api/prices?month=${month}`)))
+      .then(async (responses) => {
+        const payloads = await Promise.all(responses.map((response) => response.ok ? response.json() : Promise.resolve({ availability: [] })));
+        if (cancelled) return;
+        const dates = payloads.flatMap((payload) => (payload.availability || [])
+          .filter((entry: { status?: string }) => entry.status === "sold_off")
+          .map((entry: { date: string }) => new Date(`${entry.date}T00:00:00`)));
+        setSoldOffDates(dates);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSoldOffDates([]);
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [calendarMonth]);
+
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric" }).format(date);
+  };
+
+  const isSoldOff = (date: Date) => soldOffDates.some((soldOffDate) => soldOffDate.toDateString() === date.toDateString());
+
+  const isRangeSoldOff = (from: Date, to: Date) => {
+    const cursor = new Date(from);
+    cursor.setHours(12, 0, 0, 0);
+    const end = new Date(to);
+    end.setHours(12, 0, 0, 0);
+    while (cursor <= end) {
+      if (isSoldOff(cursor)) return true;
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return false;
   };
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -131,13 +169,32 @@ export function StaySearch() {
             
             {datePickerOpen && (
               <div className="stay-search-v2__popover stay-search-v2__popover--date">
+                <div className="stay-search-v2__availability-note" role="status">
+                  <span className="stay-search-v2__availability-dot" aria-hidden="true" />
+                  Red dates are booked or sold out and cannot be selected.
+                </div>
                 <DayPicker 
                   mode="range" 
                   selected={range} 
-                  onSelect={setRange}
-                  disabled={{ before: new Date(today) }}
+                  onSelect={(nextRange) => {
+                    if (nextRange?.from && nextRange.to && isRangeSoldOff(nextRange.from, nextRange.to)) {
+                      setError("The resort is booked or sold out for part of the selected stay. Please choose different dates.");
+                      return;
+                    }
+                    setError(null);
+                    setRange(nextRange);
+                  }}
+                  onDayClick={(date, modifiers) => {
+                    if (modifiers.soldOff || isSoldOff(date)) {
+                      setError("The resort is booked or sold out on the selected date. Please choose another date.");
+                    }
+                  }}
+                  disabled={[{ before: new Date(today) }, ...soldOffDates]}
+                  modifiers={{ soldOff: soldOffDates }}
+                  modifiersClassNames={{ soldOff: "stay-search-v2__sold-off" }}
                   numberOfMonths={2}
                   pagedNavigation
+                  onMonthChange={setCalendarMonth}
                 />
               </div>
             )}
