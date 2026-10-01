@@ -113,6 +113,12 @@ export const invoices = sqliteTable('invoices', {
   finalizedBy: text('finalized_by').references(() => users.id),
 });
 
+export const paymentAttempts = sqliteTable('payment_attempts', {
+  id: text('id').primaryKey(), invoiceId: text('invoice_id').notNull().references(() => invoices.id), invoiceVersion: integer('invoice_version').notNull(), provider: text('provider').notNull(), providerRef: text('provider_ref'), amountMinorUnits: integer('amount_minor_units').notNull(), currency: text('currency').notNull().default('INR'), status: text('status').notNull().default('created'), upiUri: text('upi_uri'), expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(), idempotencyKey: text('idempotency_key').notNull().unique(), providerPaymentId: text('provider_payment_id'), paidAmountMinorUnits: integer('paid_amount_minor_units'), utr: text('utr'), paidAt: integer('paid_at', { mode: 'timestamp' }), failureCode: text('failure_code'), lastCheckedAt: integer('last_checked_at', { mode: 'timestamp' }), createdBy: text('created_by').references(() => users.id), createdAt: integer('created_at', { mode: 'timestamp' }).notNull(), updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+}, (table) => ({ providerRefUnique: uniqueIndex('payment_attempts_provider_ref_uq').on(table.provider, table.providerRef), providerPaymentUnique: uniqueIndex('payment_attempts_provider_payment_uq').on(table.provider, table.providerPaymentId), statusExpiryIndex: index('payment_attempts_status_expiry_idx').on(table.status, table.expiresAt) }));
+export const paymentEvents = sqliteTable('payment_events', {
+  id: text('id').primaryKey(), provider: text('provider').notNull(), providerEventId: text('provider_event_id').notNull(), eventType: text('event_type').notNull(), attemptId: text('attempt_id').references(() => paymentAttempts.id), signatureValid: integer('signature_valid', { mode: 'boolean' }).notNull(), payload: text('payload').notNull(), outcome: text('outcome'), error: text('error'), receivedAt: integer('received_at', { mode: 'timestamp' }).notNull(), processedAt: integer('processed_at', { mode: 'timestamp' }),
+}, (table) => ({ providerEventUnique: uniqueIndex('payment_events_provider_event_uq').on(table.provider, table.providerEventId) }));
 export const invoicePayments = sqliteTable('invoice_payments', {
   id: text('id').primaryKey(),
   invoiceId: text('invoice_id').notNull().references(() => invoices.id),
@@ -124,6 +130,9 @@ export const invoicePayments = sqliteTable('invoice_payments', {
   notes: text('notes'),
   recordedBy: text('recorded_by').references(() => users.id),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  attemptId: text('attempt_id').references(() => paymentAttempts.id),
+  source: text('source').notNull().default('manual'),
+  providerPaymentId: text('provider_payment_id'),
 });
 
 export const qrPaymentArtifacts = sqliteTable('qr_payment_artifacts', {

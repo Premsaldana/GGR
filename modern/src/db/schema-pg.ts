@@ -113,6 +113,12 @@ export const invoices = pgTable('invoices', {
   finalizedBy: text('finalized_by').references(() => users.id),
 });
 
+export const paymentAttempts = pgTable('payment_attempts', {
+  id: text('id').primaryKey(), invoiceId: text('invoice_id').notNull().references(() => invoices.id), invoiceVersion: integer('invoice_version').notNull(), provider: text('provider').notNull(), providerRef: text('provider_ref'), amountMinorUnits: integer('amount_minor_units').notNull(), currency: text('currency').notNull().default('INR'), status: text('status').notNull().default('created'), upiUri: text('upi_uri'), expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(), idempotencyKey: text('idempotency_key').notNull().unique(), providerPaymentId: text('provider_payment_id'), paidAmountMinorUnits: integer('paid_amount_minor_units'), utr: text('utr'), paidAt: timestamp('paid_at', { withTimezone: true, mode: 'date' }), failureCode: text('failure_code'), lastCheckedAt: timestamp('last_checked_at', { withTimezone: true, mode: 'date' }), createdBy: text('created_by').references(() => users.id), createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull(), updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull(),
+}, (table) => ({ providerRefUnique: uniqueIndex('payment_attempts_provider_ref_uq').on(table.provider, table.providerRef), providerPaymentUnique: uniqueIndex('payment_attempts_provider_payment_uq').on(table.provider, table.providerPaymentId), statusExpiryIndex: index('payment_attempts_status_expiry_idx').on(table.status, table.expiresAt) }));
+export const paymentEvents = pgTable('payment_events', {
+  id: text('id').primaryKey(), provider: text('provider').notNull(), providerEventId: text('provider_event_id').notNull(), eventType: text('event_type').notNull(), attemptId: text('attempt_id').references(() => paymentAttempts.id), signatureValid: boolean('signature_valid').notNull(), payload: text('payload').notNull(), outcome: text('outcome'), error: text('error'), receivedAt: timestamp('received_at', { withTimezone: true, mode: 'date' }).notNull(), processedAt: timestamp('processed_at', { withTimezone: true, mode: 'date' }),
+}, (table) => ({ providerEventUnique: uniqueIndex('payment_events_provider_event_uq').on(table.provider, table.providerEventId) }));
 export const invoicePayments = pgTable('invoice_payments', {
   id: text('id').primaryKey(),
   invoiceId: text('invoice_id').notNull().references(() => invoices.id),
@@ -124,6 +130,9 @@ export const invoicePayments = pgTable('invoice_payments', {
   notes: text('notes'),
   recordedBy: text('recorded_by').references(() => users.id),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull(),
+  attemptId: text('attempt_id').references(() => paymentAttempts.id),
+  source: text('source').notNull().default('manual'),
+  providerPaymentId: text('provider_payment_id'),
 });
 
 export const qrPaymentArtifacts = pgTable('qr_payment_artifacts', {

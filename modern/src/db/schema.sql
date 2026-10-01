@@ -103,6 +103,8 @@ CREATE TABLE IF NOT EXISTS invoices (
   finalized_at INTEGER,
   finalized_by TEXT REFERENCES users(id)
 );
+CREATE TABLE IF NOT EXISTS payment_attempts (id TEXT PRIMARY KEY NOT NULL, invoice_id TEXT NOT NULL REFERENCES invoices(id), invoice_version INTEGER NOT NULL, provider TEXT NOT NULL, provider_ref TEXT, amount_minor_units INTEGER NOT NULL CHECK (amount_minor_units > 0), currency TEXT NOT NULL DEFAULT 'INR', status TEXT NOT NULL DEFAULT 'created', upi_uri TEXT, expires_at INTEGER NOT NULL, idempotency_key TEXT NOT NULL UNIQUE, provider_payment_id TEXT, paid_amount_minor_units INTEGER, utr TEXT, paid_at INTEGER, failure_code TEXT, last_checked_at INTEGER, created_by TEXT REFERENCES users(id), created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS payment_events (id TEXT PRIMARY KEY NOT NULL, provider TEXT NOT NULL, provider_event_id TEXT NOT NULL, event_type TEXT NOT NULL, attempt_id TEXT REFERENCES payment_attempts(id), signature_valid INTEGER NOT NULL, payload TEXT NOT NULL, outcome TEXT, error TEXT, received_at INTEGER NOT NULL, processed_at INTEGER, UNIQUE (provider, provider_event_id));
 CREATE TABLE IF NOT EXISTS invoice_payments (
   id TEXT PRIMARY KEY NOT NULL,
   invoice_id TEXT NOT NULL REFERENCES invoices(id),
@@ -184,3 +186,13 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS payment_attempts_provider_ref_uq ON payment_attempts(provider, provider_ref) WHERE provider_ref IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS payment_attempts_provider_payment_uq ON payment_attempts(provider, provider_payment_id) WHERE provider_payment_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS payment_attempts_status_expiry_idx ON payment_attempts(status, expires_at);
+CREATE UNIQUE INDEX IF NOT EXISTS payment_attempts_one_active_uq ON payment_attempts(invoice_id) WHERE status IN ('created', 'pending');
+CREATE UNIQUE INDEX IF NOT EXISTS payment_proofs_one_pending_uq ON payment_proofs(invoice_id) WHERE status = 'pending_review';
+
+CREATE UNIQUE INDEX IF NOT EXISTS invoice_payments_provider_payment_uq ON invoice_payments(provider_payment_id) WHERE provider_payment_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS invoice_payments_upi_reference_uq ON invoice_payments(reference) WHERE payment_mode = 'UPI' AND reference IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS qr_artifacts_invoice_version_uq ON qr_payment_artifacts(invoice_id, artifact_version);
