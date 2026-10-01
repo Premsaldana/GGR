@@ -8,7 +8,7 @@ import { getSession } from '@/lib/session';
 const TOKEN_TTL_SECONDS = 60 * 60;
 
 function sign(payload: string) {
-  return crypto.createHmac('sha256', process.env.SESSION_SECRET!).update(payload).digest('base64url');
+  return crypto.createHmac('sha256', process.env.REALTIME_SECRET!).update(payload).digest('base64url');
 }
 
 export async function GET(request: NextRequest) {

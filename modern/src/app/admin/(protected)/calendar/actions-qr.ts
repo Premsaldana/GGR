@@ -8,11 +8,18 @@ import crypto from 'crypto';
 
 const postgresDb = db as unknown as { transaction<T>(callback: (tx: any) => Promise<T>): Promise<T> };
 
+function manualCollectionDetails() {
+  const upiId = process.env.MANUAL_UPI_ID?.trim();
+  const payeeName = process.env.MANUAL_PAYEE_NAME?.trim();
+  if (!upiId || !payeeName) throw new Error('Manual UPI collection details are not configured');
+  return { upiId, payeeName };
+}
+
 export async function generateQRAction(invoiceId: string, amountMinorUnits: number) {
   const session = await requireAdmin();
 
-  if (amountMinorUnits < 0) {
-    return { error: 'Amount cannot be negative' };
+  if (!Number.isInteger(amountMinorUnits) || amountMinorUnits <= 0) {
+    return { error: 'Amount must be a positive whole number of paise' };
   }
 
   try {
@@ -21,15 +28,15 @@ export async function generateQRAction(invoiceId: string, amountMinorUnits: numb
       const result = await postgresDb.transaction(async (tx) => {
         const invoice = (await tx.select().from(invoices).where(eq(invoices.id, invoiceId)).execute())[0];
         if (!invoice) throw new Error('Invoice not found');
+        if (amountMinorUnits > invoice.balanceMinorUnits) throw new Error('Amount cannot exceed the invoice balance');
         const reservation = (await tx.select().from(reservations).where(eq(reservations.id, invoice.reservationId)).execute())[0];
         if (!reservation) throw new Error('Reservation not found');
+        const { upiId, payeeName } = manualCollectionDetails();
         const existingQrs = await tx.select().from(qrPaymentArtifacts).where(eq(qrPaymentArtifacts.invoiceId, invoiceId)).orderBy(desc(qrPaymentArtifacts.artifactVersion)).execute();
         const newVersion = existingQrs.length > 0 ? existingQrs[0].artifactVersion + 1 : 1;
-        const upiId = '9482095412@ybl';
-        const payeeName = 'Goa Garden Resort';
-        const transactionNote = invoice.invoiceNumber;
-        const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${(amountMinorUnits / 100).toFixed(2)}&tr=${encodeURIComponent(transactionNote)}&cu=INR`;
         const qrId = crypto.randomUUID();
+        const transactionNote = `GGR-${invoice.invoiceNumber}-${qrId}`;
+        const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${(amountMinorUnits / 100).toFixed(2)}&tr=${encodeURIComponent(transactionNote)}&cu=INR`;
         await tx.insert(qrPaymentArtifacts).values({ id: qrId, invoiceId, amountMinorUnits, upiId, payeeName, currency: 'INR', transactionNote, upiUri, qrFormat: 'SVG', artifactVersion: newVersion, createdBy: session.userId, createdAt: new Date() }).execute();
         if (reservation.paymentStatus === 'not_requested') await tx.update(reservations).set({ paymentStatus: 'qr_generated', updatedAt: new Date() }).where(eq(reservations.id, reservation.id)).execute();
         await tx.insert(auditEvents).values({ id: crypto.randomUUID(), actorUserId: session.userId, entityType: 'qr_payment_artifact', entityId: qrId, eventType: 'CREATE', createdAt: new Date() }).execute();
@@ -41,9 +48,11 @@ export async function generateQRAction(invoiceId: string, amountMinorUnits: numb
     const result = db.transaction((tx) => {
       const invoice = tx.select().from(invoices).where(eq(invoices.id, invoiceId)).get();
       if (!invoice) throw new Error('Invoice not found');
+      if (amountMinorUnits > invoice.balanceMinorUnits) throw new Error('Amount cannot exceed the invoice balance');
 
       const reservation = tx.select().from(reservations).where(eq(reservations.id, invoice.reservationId)).get();
       if (!reservation) throw new Error('Reservation not found');
+      const { upiId, payeeName } = manualCollectionDetails();
 
       // Get latest QR version to increment
       const existingQrs = tx.select().from(qrPaymentArtifacts)
@@ -53,14 +62,10 @@ export async function generateQRAction(invoiceId: string, amountMinorUnits: numb
       
       const newVersion = existingQrs.length > 0 ? existingQrs[0].artifactVersion + 1 : 1;
       
-      const upiId = '9482095412@ybl';
-      const payeeName = 'Goa Garden Resort';
       const amountStr = (amountMinorUnits / 100).toFixed(2);
-      const transactionNote = invoice.invoiceNumber;
-      
-      const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${amountStr}&tr=${encodeURIComponent(transactionNote)}&cu=INR`;
-
       const qrId = crypto.randomUUID();
+      const transactionNote = `GGR-${invoice.invoiceNumber}-${qrId}`;
+      const upiUri = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(payeeName)}&am=${amountStr}&tr=${encodeURIComponent(transactionNote)}&cu=INR`;
 
       tx.insert(qrPaymentArtifacts).values({
         id: qrId,

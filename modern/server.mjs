@@ -17,7 +17,8 @@ const port = Number(process.env.PORT || 3000);
 const dbUrl = process.env.DATABASE_URL;
 const provider = process.env.DATABASE_PROVIDER || 'sqlite';
 const sessionSecret = process.env.SESSION_SECRET;
-if (!dbUrl || !sessionSecret) throw new Error('DATABASE_URL and SESSION_SECRET are required');
+const realtimeSecret = process.env.REALTIME_SECRET;
+if (!dbUrl || !sessionSecret || !realtimeSecret) throw new Error('DATABASE_URL, SESSION_SECRET and REALTIME_SECRET are required');
 if (provider !== 'sqlite' && provider !== 'postgres') throw new Error(`Unsupported DATABASE_PROVIDER: ${provider}`);
 
 let db;
@@ -125,7 +126,7 @@ const upgradeHandler = app.getUpgradeHandler();
 const server = http.createServer(async (request, response) => {
   const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
   if (url.pathname === '/api/realtime/publish' && request.method === 'POST') {
-    if (!safeEqual(String(request.headers['x-realtime-secret'] || ''), sessionSecret)) { response.writeHead(401, { 'content-type': 'application/json' }); response.end(JSON.stringify({ error: 'Unauthorized' })); return; }
+    if (!safeEqual(String(request.headers['x-realtime-secret'] || ''), realtimeSecret)) { response.writeHead(401, { 'content-type': 'application/json' }); response.end(JSON.stringify({ error: 'Unauthorized' })); return; }
     try {
       const event = JSON.parse(await readBody(request));
       if (!event.invoiceId || !event.reservationId || !event.type) throw new Error('Invalid event');

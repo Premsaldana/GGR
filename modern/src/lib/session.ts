@@ -24,7 +24,7 @@ export async function createClient() {
             cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, options);
             });
-          } catch (error) {
+      } catch {
             // Ignored since middleware handles refreshing
           }
         },
@@ -35,9 +35,9 @@ export async function createClient() {
 
 export async function getSession(): Promise<SessionData> {
   const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user }, error } = await supabase.auth.getUser();
   
-  if (!session) {
+  if (error || !user || !user.email) {
     return { isLoggedIn: false };
   }
 
@@ -46,13 +46,17 @@ export async function getSession(): Promise<SessionData> {
   const { users } = await import('@/db/schema');
   const { eq } = await import('drizzle-orm');
   
-  const localUser = await db.select().from(users).where(eq(users.email, session.user.email!)).limit(1).then(res => res[0]);
+  const localUser = await db.select().from(users).where(eq(users.email, user.email)).limit(1).then(res => res[0]);
+
+  if (!localUser || localUser.role !== 'owner_admin') {
+    return { isLoggedIn: false };
+  }
 
   return {
     isLoggedIn: true,
-    email: session.user.email,
-    userId: localUser ? localUser.id : session.user.id,
-    role: 'owner_admin'
+    email: user.email,
+    userId: localUser.id,
+    role: localUser.role
   };
 }
 

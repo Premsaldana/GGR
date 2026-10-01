@@ -16,7 +16,7 @@ export async function publishRealtimeEvent(event: {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        'x-realtime-secret': process.env.SESSION_SECRET || '',
+        'x-realtime-secret': process.env.REALTIME_SECRET || '',
       },
       body: JSON.stringify(event),
       cache: 'no-store',

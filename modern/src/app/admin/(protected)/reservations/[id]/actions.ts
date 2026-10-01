@@ -30,16 +30,16 @@ export async function verifyProofAction(proofId: string, verifiedAmountMinorUnit
       const reservation = (await tx.select().from(reservations).where(eq(reservations.id, invoice.reservationId)).execute())[0];
       if (!reservation) throw new Error('Reservation not found');
 
-      tx.update(paymentProofs).set({ status: 'verified', reviewedAt: new Date(), reviewedBy: session.userId, verifiedAmountMinorUnits, paymentMode, paymentReference, adminNote, updatedAt: new Date() }).where(eq(paymentProofs.id, proofId)).execute();
-      tx.insert(invoicePayments).values({ id: crypto.randomUUID(), invoiceId: invoice.id, amountMinorUnits: verifiedAmountMinorUnits, paymentMode, paymentStatus: 'completed', receivedAt: new Date(), reference: paymentReference || null, notes: adminNote || null, recordedBy: session.userId, createdAt: new Date() }).execute();
+      await tx.update(paymentProofs).set({ status: 'verified', reviewedAt: new Date(), reviewedBy: session.userId, verifiedAmountMinorUnits, paymentMode, paymentReference, adminNote, updatedAt: new Date() }).where(eq(paymentProofs.id, proofId)).execute();
+      await tx.insert(invoicePayments).values({ id: crypto.randomUUID(), invoiceId: invoice.id, amountMinorUnits: verifiedAmountMinorUnits, paymentMode, paymentStatus: 'completed', receivedAt: new Date(), reference: paymentReference || null, notes: adminNote || null, recordedBy: session.userId, createdAt: new Date() }).execute();
 
       const paymentTotals = (await tx.select({ total: sum(invoicePayments.amountMinorUnits) }).from(invoicePayments).where(eq(invoicePayments.invoiceId, invoice.id)).execute())[0];
       const totalPaid = (invoice.advanceMinorUnits ?? 0) + Number(paymentTotals?.total ?? 0);
       const balanceMinorUnits = Math.max(0, invoice.totalMinorUnits - totalPaid);
       const newPaymentStatus = totalPaid >= invoice.totalMinorUnits ? 'paid' : totalPaid > 0 ? 'partially_paid' : 'not_requested';
-      tx.update(invoices).set({ balanceMinorUnits }).where(eq(invoices.id, invoice.id)).execute();
-      tx.update(reservations).set({ paymentStatus: newPaymentStatus, updatedAt: new Date() }).where(eq(reservations.id, reservation.id)).execute();
-      tx.insert(auditEvents).values({ id: crypto.randomUUID(), actorUserId: session.userId, entityType: 'payment_proof', entityId: proofId, eventType: 'VERIFY_PROOF', afterJson: JSON.stringify({ verifiedAmountMinorUnits, totalPaid, balanceMinorUnits, paymentMode, paymentReference, newPaymentStatus }), createdAt: new Date() }).execute();
+      await tx.update(invoices).set({ balanceMinorUnits }).where(eq(invoices.id, invoice.id)).execute();
+      await tx.update(reservations).set({ paymentStatus: newPaymentStatus, updatedAt: new Date() }).where(eq(reservations.id, reservation.id)).execute();
+      await tx.insert(auditEvents).values({ id: crypto.randomUUID(), actorUserId: session.userId, entityType: 'payment_proof', entityId: proofId, eventType: 'VERIFY_PROOF', afterJson: JSON.stringify({ verifiedAmountMinorUnits, totalPaid, balanceMinorUnits, paymentMode, paymentReference, newPaymentStatus }), createdAt: new Date() }).execute();
       return { success: true };
 });
     } else {
@@ -91,8 +91,8 @@ export async function rejectProofAction(proofId: string, adminNote: string, requ
       const proof = (await tx.select().from(paymentProofs).where(eq(paymentProofs.id, proofId)).execute())[0];
       if (!proof) throw new Error('Proof not found');
       const newStatus = requestResubmit ? 'resubmit_requested' : 'rejected';
-      tx.update(paymentProofs).set({ status: newStatus, reviewedAt: new Date(), reviewedBy: session.userId, adminNote, updatedAt: new Date() }).where(eq(paymentProofs.id, proofId)).execute();
-      tx.insert(auditEvents).values({ id: crypto.randomUUID(), actorUserId: session.userId, entityType: 'payment_proof', entityId: proofId, eventType: 'REJECT_PROOF', afterJson: JSON.stringify({ newStatus, adminNote }), createdAt: new Date() }).execute();
+      await tx.update(paymentProofs).set({ status: newStatus, reviewedAt: new Date(), reviewedBy: session.userId, adminNote, updatedAt: new Date() }).where(eq(paymentProofs.id, proofId)).execute();
+      await tx.insert(auditEvents).values({ id: crypto.randomUUID(), actorUserId: session.userId, entityType: 'payment_proof', entityId: proofId, eventType: 'REJECT_PROOF', afterJson: JSON.stringify({ newStatus, adminNote }), createdAt: new Date() }).execute();
       return { success: true };
 });
     } else {
@@ -138,8 +138,8 @@ export async function finalizeInvoiceAction(reservationId: string) {
       const input = snapshot.input || { lineItems, advanceReceivedMinorUnits: reservation.advanceReceivedMinorUnits ?? 0, refundableSecurityDepositMinorUnits: reservation.securityDepositMinorUnits ?? 500000 };
       const calcResult = calculateInvoice(input);
       const invoiceId = crypto.randomUUID();
-      tx.insert(invoices).values({ id: invoiceId, invoiceNumber: `GGR-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`, reservationId, version: latestInvoice.version + 1, status: 'issued', issuedAt: new Date(), finalizedAt: new Date(), finalizedBy: session.userId, parentInvoiceId: latestInvoice.id, currency: 'INR', subtotalMinorUnits: calcResult.subtotalMinorUnits, taxMinorUnits: calcResult.taxMinorUnits, securityDepositMinorUnits: calcResult.securityDepositMinorUnits, totalMinorUnits: calcResult.totalMinorUnits, advanceMinorUnits: calcResult.advanceMinorUnits, balanceMinorUnits: 0, amountInWords: calcResult.amountInWords, snapshotJson: JSON.stringify({ ...snapshot, input, calculation: calcResult }), createdBy: session.userId, createdAt: new Date() }).execute();
-      tx.insert(auditEvents).values({ id: crypto.randomUUID(), actorUserId: session.userId, entityType: 'invoice', entityId: invoiceId, eventType: 'FINALIZE_INVOICE', createdAt: new Date() }).execute();
+      await tx.insert(invoices).values({ id: invoiceId, invoiceNumber: `GGR-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`, reservationId, version: latestInvoice.version + 1, status: 'issued', issuedAt: new Date(), finalizedAt: new Date(), finalizedBy: session.userId, parentInvoiceId: latestInvoice.id, currency: 'INR', subtotalMinorUnits: calcResult.subtotalMinorUnits, taxMinorUnits: calcResult.taxMinorUnits, securityDepositMinorUnits: calcResult.securityDepositMinorUnits, totalMinorUnits: calcResult.totalMinorUnits, advanceMinorUnits: calcResult.advanceMinorUnits, balanceMinorUnits: 0, amountInWords: calcResult.amountInWords, snapshotJson: JSON.stringify({ ...snapshot, input, calculation: calcResult }), createdBy: session.userId, createdAt: new Date() }).execute();
+      await tx.insert(auditEvents).values({ id: crypto.randomUUID(), actorUserId: session.userId, entityType: 'invoice', entityId: invoiceId, eventType: 'FINALIZE_INVOICE', createdAt: new Date() }).execute();
       return { success: true, invoiceId };
 });
     } else {
