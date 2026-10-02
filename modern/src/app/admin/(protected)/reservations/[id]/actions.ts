@@ -8,6 +8,7 @@ import crypto from 'crypto';
 import { calculateInvoice } from '@/lib/invoice';
 import { adminReviewProofSchema, rejectProofSchema } from '@/lib/validations';
 import { publishRealtimeEvent } from '@/lib/realtime-publish';
+import { applyPayment } from '@/lib/payments/apply-payment';
 
 const postgresDb = db as unknown as { transaction<T>(callback: (tx: any) => Promise<T>): Promise<T> };
 const provider = databaseProvider as string;
@@ -27,20 +28,18 @@ export async function verifyProofAction(proofId: string, verifiedAmountMinorUnit
       if (proof.status !== 'pending_review' && proof.status !== 'resubmit_requested') throw new Error('Proof is not in a verifiable state');
       const invoice = (await tx.select().from(invoices).where(eq(invoices.id, proof.invoiceId)).execute())[0];
       if (!invoice) throw new Error('Invoice not found');
-      const reservation = (await tx.select().from(reservations).where(eq(reservations.id, invoice.reservationId)).execute())[0];
-      if (!reservation) throw new Error('Reservation not found');
-
+      const posted = await applyPayment(tx, {
+        invoiceId: invoice.id,
+        amountMinorUnits: verifiedAmountMinorUnits,
+        mode: paymentMode,
+        reference: paymentReference || undefined,
+        source: 'proof',
+        actorUserId: session.userId ?? null,
+        note: adminNote,
+      });
       await tx.update(paymentProofs).set({ status: 'verified', reviewedAt: new Date(), reviewedBy: session.userId, verifiedAmountMinorUnits, paymentMode, paymentReference, adminNote, updatedAt: new Date() }).where(eq(paymentProofs.id, proofId)).execute();
-      await tx.insert(invoicePayments).values({ id: crypto.randomUUID(), invoiceId: invoice.id, amountMinorUnits: verifiedAmountMinorUnits, paymentMode, paymentStatus: 'completed', receivedAt: new Date(), reference: paymentReference || null, notes: adminNote || null, recordedBy: session.userId, createdAt: new Date() }).execute();
-
-      const paymentTotals = (await tx.select({ total: sum(invoicePayments.amountMinorUnits) }).from(invoicePayments).where(eq(invoicePayments.invoiceId, invoice.id)).execute())[0];
-      const totalPaid = (invoice.advanceMinorUnits ?? 0) + Number(paymentTotals?.total ?? 0);
-      const balanceMinorUnits = Math.max(0, invoice.totalMinorUnits - totalPaid);
-      const newPaymentStatus = totalPaid >= invoice.totalMinorUnits ? 'paid' : totalPaid > 0 ? 'partially_paid' : 'not_requested';
-      await tx.update(invoices).set({ balanceMinorUnits }).where(eq(invoices.id, invoice.id)).execute();
-      await tx.update(reservations).set({ paymentStatus: newPaymentStatus, updatedAt: new Date() }).where(eq(reservations.id, reservation.id)).execute();
-      await tx.insert(auditEvents).values({ id: crypto.randomUUID(), actorUserId: session.userId, entityType: 'payment_proof', entityId: proofId, eventType: 'VERIFY_PROOF', afterJson: JSON.stringify({ verifiedAmountMinorUnits, totalPaid, balanceMinorUnits, paymentMode, paymentReference, newPaymentStatus }), createdAt: new Date() }).execute();
-      return { success: true };
+      await tx.insert(auditEvents).values({ id: crypto.randomUUID(), actorUserId: session.userId, entityType: 'payment_proof', entityId: proofId, eventType: 'VERIFY_PROOF', afterJson: JSON.stringify({ verifiedAmountMinorUnits, totalPaid: posted.totalPaidMinorUnits, balanceMinorUnits: posted.balanceMinorUnits, paymentMode, paymentReference, newPaymentStatus: posted.reservationPaymentStatus, paymentPostingStatus: posted.status }), createdAt: new Date() }).execute();
+      return { success: true, paymentPostingStatus: posted.status };
 });
     } else {
     result = db.transaction((tx) => {
