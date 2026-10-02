@@ -8,6 +8,7 @@ import crypto from 'crypto';
 import { PaymentUploadForm } from './PaymentUploadForm';
 import { paymentProofs } from '@/db/schema';
 import { GuestRealtimeVerification } from './GuestRealtimeVerification';
+import { PaymentUPIModal } from './PaymentUPIModal';
 import { Button } from '@/components/ui/Button';
 import { calculateInvoicePaymentSummary } from '@/lib/invoice';
 
@@ -140,7 +141,10 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                 Download Booking Voucher (PDF)
               </Button>
             </div>
-          ) : qrArtifact ? (
+          ) : (
+            <div className="space-y-4 border-b border-gray-100 p-6">
+              <PaymentUPIModal token={token} balanceMinorUnits={paymentSummary.balanceMinorUnits} />
+              {qrArtifact ? (
             <div className="p-6 bg-[#FFFCF6] flex flex-col items-center border-b border-gray-100">
               <p className="text-xs text-gray-500 mb-4 text-center">
                 Scan using any UPI app to pay
@@ -157,10 +161,12 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
                 Payment is not automatically verified by this screen.
               </div>
             </div>
-          ) : (
-            <div className="p-6 bg-gray-50 flex flex-col items-center justify-center text-center border-b border-gray-100">
+              ) : (
+                <div className="bg-gray-50 flex flex-col items-center justify-center rounded-lg p-4 text-center">
               <p className="text-sm text-gray-600 mb-2">No active payment request.</p>
               <p className="text-xs text-gray-400">Please contact the front desk.</p>
+                </div>
+              )}
             </div>
           )}
 
