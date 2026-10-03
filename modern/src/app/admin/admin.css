@@ -34,3 +34,21 @@
 .admin-button--dark:hover:not(:disabled) { background: var(--color-admin-ink); border-color: var(--color-admin-ink); }
 .admin-button--secondary { color: var(--color-admin-botanical); background: var(--color-admin-shell); border-color: var(--color-admin-botanical); }
 .admin-button--secondary:hover:not(:disabled) { color: var(--color-admin-ink); background: var(--color-admin-mineral); }
+.admin-input {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  margin-top: .45rem;
+  border: 1px solid #B8B0A4;
+  border-radius: .5rem;
+  background: #fff;
+  color: var(--color-admin-ink);
+  padding: .65rem .8rem;
+  box-shadow: inset 0 1px 2px rgb(29 36 34 / 5%);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+.admin-input::placeholder { color: #6B756F; opacity: 1; }
+.admin-input:hover:not(:disabled) { border-color: var(--color-admin-sage); }
+.admin-input:focus-visible { border-color: var(--color-admin-terracotta); outline: 3px solid rgb(183 94 60 / 20%); outline-offset: 1px; box-shadow: 0 0 0 1px var(--color-admin-terracotta); }
+.admin-input:disabled { cursor: not-allowed; background: var(--color-admin-mineral); color: var(--color-admin-sage); }
+input.admin-input[type='date'] { color-scheme: light; }
