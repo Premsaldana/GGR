@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, databaseProvider, dbReady } from '@/db';
-import { invoices, invoicePayments, qrPaymentArtifacts, shareLinks, paymentProofs, reservations, guests } from '@/db/schema';
+import { invoices, invoicePayments, qrPaymentArtifacts, shareLinks, paymentProofs, reservations, guests, units } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import crypto from 'crypto';
 import { generateInvoicePDFStream } from '@/lib/pdfGenerator';
+import { getInvoiceStayMetadata } from '@/lib/invoiceMetadata';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -39,6 +40,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const reservationQuery = db.select().from(reservations).where(eq(reservations.id, invoice.reservationId));
     const reservation = databaseProvider === 'postgres' ? (await dbReady, (await reservationQuery.execute())[0]) : reservationQuery.get();
     if (!reservation) return new NextResponse('Reservation not found', { status: 404 });
+    const unitQuery = db.select().from(units).where(eq(units.id, reservation.unitId));
+    const unit = databaseProvider === 'postgres' ? (await dbReady, (await unitQuery.execute())[0]) : unitQuery.get();
 
     const guestQuery = db.select().from(guests).where(eq(guests.id, reservation.guestId));
     const guest = databaseProvider === 'postgres' ? (await dbReady, (await guestQuery.execute())[0]) : guestQuery.get();
@@ -53,6 +56,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           amountMinorUnits: li.amountMinorUnits ?? (li.quantity * li.rateMinorUnits)
         }));
       }
+      snapshot = { ...(snapshot || {}), ...getInvoiceStayMetadata(reservation, unit) };
     } catch (e) {
       snapshot = null;
     }

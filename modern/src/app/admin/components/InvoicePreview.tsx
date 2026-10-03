@@ -129,10 +129,6 @@ export function InvoicePreview({ invoiceId, reservation, calculation, lineItems,
               <span>Subtotal</span>
               <span>{formatCurrency(calculation.subtotalMinorUnits)}</span>
             </div>
-            <div className="flex justify-between text-sm text-[#55675D]">
-              <span>GST / Applicable Taxes</span>
-              <span>{formatCurrency(calculation.taxMinorUnits)}</span>
-            </div>
             <div className="flex justify-between py-3 mt-3 border-t border-[#E8E1D6] font-bold text-lg text-[#233B35]">
               <span>TOTAL</span>
               <span>{formatCurrency(calculation.totalMinorUnits)}</span>

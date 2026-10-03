@@ -174,10 +174,10 @@ async function runInvoiceTests() {
   });
 
   // Subtotal = 1500000 + 160000 + 200000 = 1860000
-  // Tax = 18% of 1860000 = 334800
+  // GST is no longer calculated in the invoice workflow.
   // Deposit = 500000
-  // Total = 1860000 + 334800 = 2194800
-  if (calc8.subtotalMinorUnits === 1860000 && calc8.taxMinorUnits === 334800 && calc8.totalMinorUnits === 2194800) {
+  // Total = subtotal = 1860000
+  if (calc8.subtotalMinorUnits === 1860000 && calc8.taxMinorUnits === 0 && calc8.totalMinorUnits === 1860000) {
     console.log('✅ Test 8 Passed');
   } else {
     console.error('❌ Test 8 Failed', calc8);

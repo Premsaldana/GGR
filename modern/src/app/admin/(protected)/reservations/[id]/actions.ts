@@ -133,7 +133,7 @@ export async function finalizeInvoiceAction(reservationId: string) {
       if (!latestInvoice) throw new Error('No issued invoice found');
       if (latestInvoice.finalizedAt) throw new Error('Invoice is already finalized');
       const lineItemsRows = await tx.select().from(reservationLineItems).where(eq(reservationLineItems.reservationId, reservationId)).execute();
-      const lineItems = lineItemsRows.map((li: any) => ({ category: li.category, description: li.description, quantity: li.quantity, rateMinorUnits: li.rateMinorUnits, taxRate: li.taxRate ?? undefined }));
+      const lineItems = lineItemsRows.map((li: any) => ({ category: li.category, description: li.description, quantity: li.quantity, rateMinorUnits: li.rateMinorUnits }));
       const snapshot = JSON.parse(latestInvoice.snapshotJson || '{}');
       const input = snapshot.input || { lineItems, advanceReceivedMinorUnits: reservation.advanceReceivedMinorUnits ?? 0, refundableSecurityDepositMinorUnits: reservation.securityDepositMinorUnits ?? 500000 };
       const calcResult = calculateInvoice(input);
@@ -152,7 +152,7 @@ export async function finalizeInvoiceAction(reservationId: string) {
       if (!latestInvoice) throw new Error('No issued invoice found');
       if (latestInvoice.finalizedAt) throw new Error('Invoice is already finalized');
       const lineItemsRows = tx.select().from(reservationLineItems).where(eq(reservationLineItems.reservationId, reservationId)).all();
-      const lineItems = lineItemsRows.map((li: any) => ({ category: li.category, description: li.description, quantity: li.quantity, rateMinorUnits: li.rateMinorUnits, taxRate: li.taxRate ?? undefined }));
+      const lineItems = lineItemsRows.map((li: any) => ({ category: li.category, description: li.description, quantity: li.quantity, rateMinorUnits: li.rateMinorUnits }));
       const snapshot = JSON.parse(latestInvoice.snapshotJson || '{}');
       const input = snapshot.input || { lineItems, advanceReceivedMinorUnits: reservation.advanceReceivedMinorUnits ?? 0, refundableSecurityDepositMinorUnits: reservation.securityDepositMinorUnits ?? 500000 };
       const calcResult = calculateInvoice(input);

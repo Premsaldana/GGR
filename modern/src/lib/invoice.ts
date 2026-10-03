@@ -86,7 +86,9 @@ export function convertRupeesToWords(amount: number): string {
 
 export function calculateInvoice(input: InvoiceCalculationInput): InvoiceCalculationResult {
   let subtotalMinorUnits = 0;
-  let taxMinorUnits = 0;
+  // GST/tax is intentionally not part of the resort invoice workflow.
+  // Keep the field at zero for database and API backward compatibility.
+  const taxMinorUnits = 0;
 
   for (const item of input.lineItems) {
     if (item.quantity < 0 || item.rateMinorUnits < 0) {
@@ -95,9 +97,6 @@ export function calculateInvoice(input: InvoiceCalculationInput): InvoiceCalcula
     const lineAmount = item.quantity * item.rateMinorUnits;
     subtotalMinorUnits += lineAmount;
 
-    if (item.taxRate && item.taxRate > 0) {
-      taxMinorUnits += Math.round(lineAmount * (item.taxRate / 100));
-    }
   }
 
   const securityDepositMinorUnits = input.refundableSecurityDepositMinorUnits ?? (5000 * 100); // default 5000 INR

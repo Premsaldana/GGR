@@ -319,10 +319,6 @@ const InvoiceDocument = ({ invoice, snapshot, payments }: InvoicePDFProps) => {
               <Text style={styles.totalLabel}>Subtotal</Text>
               <Text style={styles.totalValue}>{(invoice.subtotalMinorUnits / 100).toFixed(2)}</Text>
             </View>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>GST / Taxes</Text>
-              <Text style={styles.totalValue}>{(invoice.taxMinorUnits / 100).toFixed(2)}</Text>
-            </View>
             <View style={styles.grandTotalRow}>
               <Text style={styles.grandTotalLabel}>TOTAL</Text>
               <Text style={styles.grandTotalValue}>{(invoice.totalMinorUnits / 100).toFixed(2)}</Text>

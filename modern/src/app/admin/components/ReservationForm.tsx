@@ -30,7 +30,6 @@ const formSchema = z.object({
   earlyCheckIn: z.number().min(0).default(0),
   lateCheckOut: z.number().min(0).default(0),
   securityDeposit: z.number().min(0).default(5000),
-  taxPercentage: z.number().min(0).default(0),
   additionalServices: z.array(z.object({
     description: z.string().min(1),
     quantity: z.number().min(1),
@@ -71,7 +70,6 @@ export default function ReservationForm({
       earlyCheckIn: 0,
       lateCheckOut: 0,
       securityDeposit: 5000,
-      taxPercentage: 0,
       additionalServices: []
     }
   });
@@ -112,7 +110,6 @@ export default function ReservationForm({
     if (isNaN(nights)) nights = 1;
 
     const generatedLineItems = [];
-    const taxRate = isNaN(formValues.taxPercentage || 0) ? 0 : (formValues.taxPercentage || 0);
 
     const accomRate = isNaN(formValues.accommodationRate || 0) ? 0 : (formValues.accommodationRate * 100);
     if (formValues.isNightlyRate) {
@@ -121,7 +118,6 @@ export default function ReservationForm({
         description: 'Rent',
         quantity: nights,
         rateMinorUnits: accomRate,
-        taxRate
       });
     } else {
       generatedLineItems.push({
@@ -129,7 +125,6 @@ export default function ReservationForm({
         description: 'Rent',
         quantity: 1,
         rateMinorUnits: accomRate,
-        taxRate
       });
     }
 
@@ -141,7 +136,6 @@ export default function ReservationForm({
         description: 'Extra Person',
         quantity: epQty,
         rateMinorUnits: epRate,
-        taxRate
       });
     }
 
@@ -152,7 +146,6 @@ export default function ReservationForm({
         description: 'Early Check-in',
         quantity: 1,
         rateMinorUnits: eciAmt,
-        taxRate
       });
     }
 
@@ -163,7 +156,6 @@ export default function ReservationForm({
         description: 'Late Check-out',
         quantity: 1,
         rateMinorUnits: lcoAmt,
-        taxRate
       });
     }
 
@@ -176,8 +168,7 @@ export default function ReservationForm({
           description: service.description || 'Service',
           quantity: sQty,
           rateMinorUnits: sRate,
-          taxRate
-        });
+          });
       }
     }
 
@@ -325,15 +316,9 @@ export default function ReservationForm({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Global Tax (GST %)</label>
-                <input min="0" type="number" step="0.1" {...register("taxPercentage", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="0" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Security Deposit (₹)</label>
-                <input min="0" type="number" {...register("securityDeposit", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="5000" />
-              </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Security Deposit (₹)</label>
+              <input min="0" type="number" {...register("securityDeposit", { valueAsNumber: true })} className="w-full px-3 py-2 border border-[var(--color-admin-mist)] rounded-md bg-white" placeholder="5000" />
             </div>
             
             <div className="pt-2 border-t mt-2 border-[var(--color-admin-mist)]">
@@ -393,7 +378,6 @@ export default function ReservationForm({
             <div className="bg-white border border-[var(--color-admin-mist)] p-4 rounded-md space-y-2 text-sm shadow-sm">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-admin-sage)] border-b pb-1 mb-2">Live Billing Summary</h4>
               <div className="flex justify-between"><span>Subtotal:</span> <span>₹{liveSummary.subtotalMinorUnits / 100}</span></div>
-              <div className="flex justify-between"><span>Tax (GST):</span> <span>₹{liveSummary.taxMinorUnits / 100}</span></div>
               <div className="flex justify-between"><span>Security Deposit (Refundable):</span> <span>₹{liveSummary.securityDepositMinorUnits / 100}</span></div>
               <div className="flex justify-between font-bold border-t pt-1 text-red-700"><span>Total Payable at Check-in:</span> <span>₹{liveSummary.totalMinorUnits / 100}</span></div>
             </div>

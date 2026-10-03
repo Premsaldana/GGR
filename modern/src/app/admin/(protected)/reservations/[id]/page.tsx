@@ -53,7 +53,6 @@ export default async function ReservationDetailPage({ params, searchParams }: { 
         description: li.description,
         quantity: li.quantity,
         rateMinorUnits: li.rateMinorUnits,
-        taxRate: li.taxRate ?? undefined,
       })),
       advanceReceivedMinorUnits: reservation.advanceReceivedMinorUnits ?? 0,
       refundableSecurityDepositMinorUnits: 500000,

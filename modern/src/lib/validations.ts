@@ -41,7 +41,6 @@ export const reservationFormSchema = z.object({
   earlyCheckIn: rupeesSchema.default(0),
   lateCheckOut: rupeesSchema.default(0),
   securityDeposit: rupeesSchema.default(5000),
-  taxPercentage: z.number().min(0).max(100).default(0),
   additionalServices: z.array(z.object({
     description: z.string().min(1),
     quantity: z.number().int().min(1),

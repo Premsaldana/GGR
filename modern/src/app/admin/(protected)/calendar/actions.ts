@@ -176,7 +176,6 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
           description: `Rent for ${nights} night(s)`,
           quantity: nights,
           rateMinorUnits: accomRateMinor,
-          taxRate: validData.taxPercentage,
           amountMinorUnits: nights * accomRateMinor
         });
       } else {
@@ -185,7 +184,6 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
           description: `Total Rent`,
           quantity: 1,
           rateMinorUnits: accomRateMinor,
-          taxRate: validData.taxPercentage,
           amountMinorUnits: accomRateMinor
         });
       }
@@ -197,7 +195,6 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
           description: 'Extra Person',
           quantity: validData.extraPersonQuantity,
           rateMinorUnits: epRateMinor,
-          taxRate: validData.taxPercentage,
           amountMinorUnits: validData.extraPersonQuantity * epRateMinor
         });
       }
@@ -209,7 +206,6 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
           description: 'Early Check-in',
           quantity: 1,
           rateMinorUnits: eciMinor,
-          taxRate: validData.taxPercentage,
           amountMinorUnits: eciMinor
         });
       }
@@ -221,7 +217,6 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
           description: 'Late Check-out',
           quantity: 1,
           rateMinorUnits: lcoMinor,
-          taxRate: validData.taxPercentage,
           amountMinorUnits: lcoMinor
         });
       }
@@ -234,7 +229,6 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
             description: service.description,
             quantity: service.quantity,
             rateMinorUnits: sRateMinor,
-            taxRate: validData.taxPercentage,
             amountMinorUnits: service.quantity * sRateMinor
           });
         }
@@ -248,7 +242,6 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
           description: li.description,
           quantity: li.quantity,
           rateMinorUnits: li.rateMinorUnits,
-          taxRate: li.taxRate,
           amountMinorUnits: li.amountMinorUnits,
           sortOrder: index,
         }));
@@ -334,7 +327,6 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
           description: `Rent for ${nights} night(s)`,
           quantity: nights,
           rateMinorUnits: accomRateMinor,
-          taxRate: validData.taxPercentage,
           amountMinorUnits: nights * accomRateMinor
         });
       } else {
@@ -343,7 +335,6 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
           description: `Total Rent`,
           quantity: 1,
           rateMinorUnits: accomRateMinor,
-          taxRate: validData.taxPercentage,
           amountMinorUnits: accomRateMinor
         });
       }
@@ -355,7 +346,6 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
           description: 'Extra Person',
           quantity: validData.extraPersonQuantity,
           rateMinorUnits: epRateMinor,
-          taxRate: validData.taxPercentage,
           amountMinorUnits: validData.extraPersonQuantity * epRateMinor
         });
       }
@@ -367,7 +357,6 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
           description: 'Early Check-in',
           quantity: 1,
           rateMinorUnits: eciMinor,
-          taxRate: validData.taxPercentage,
           amountMinorUnits: eciMinor
         });
       }
@@ -379,7 +368,6 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
           description: 'Late Check-out',
           quantity: 1,
           rateMinorUnits: lcoMinor,
-          taxRate: validData.taxPercentage,
           amountMinorUnits: lcoMinor
         });
       }
@@ -392,7 +380,6 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
             description: service.description,
             quantity: service.quantity,
             rateMinorUnits: sRateMinor,
-            taxRate: validData.taxPercentage,
             amountMinorUnits: service.quantity * sRateMinor
           });
         }
@@ -406,7 +393,6 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
           description: li.description,
           quantity: li.quantity,
           rateMinorUnits: li.rateMinorUnits,
-          taxRate: li.taxRate,
           amountMinorUnits: li.amountMinorUnits,
           sortOrder: index,
         }));
@@ -471,7 +457,6 @@ export async function issueInvoiceAction(reservationId: string, clientDepositMin
         description: li.description,
         quantity: li.quantity,
         rateMinorUnits: li.rateMinorUnits,
-        taxRate: li.taxRate ?? undefined,
         amountMinorUnits: li.amountMinorUnits,
       }));
 
@@ -546,7 +531,6 @@ export async function issueInvoiceAction(reservationId: string, clientDepositMin
         description: li.description,
         quantity: li.quantity,
         rateMinorUnits: li.rateMinorUnits,
-        taxRate: li.taxRate ?? undefined,
         amountMinorUnits: li.amountMinorUnits,
       }));
 

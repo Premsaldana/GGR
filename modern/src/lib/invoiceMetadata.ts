@@ -4,6 +4,8 @@ type ReservationLike = {
   reservationNumber: string;
   checkInDate: string;
   checkOutDate: string;
+  adults?: number;
+  children?: number;
 };
 
 type UnitLike = {
@@ -20,6 +22,8 @@ export function getInvoiceStayMetadata(reservation: ReservationLike, unit?: Unit
     unitDisplayName: unit?.displayName || 'Unit',
     checkInDate: reservation.checkInDate,
     checkOutDate: reservation.checkOutDate,
+    adults: reservation.adults,
+    children: reservation.children,
     checkInTime: unit?.defaultCheckInTime || DEFAULT_CHECK_IN_TIME,
     checkOutTime: unit?.defaultCheckOutTime || DEFAULT_CHECK_OUT_TIME,
   };
