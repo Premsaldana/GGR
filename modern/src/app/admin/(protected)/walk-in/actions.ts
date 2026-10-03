@@ -54,7 +54,7 @@ export async function createWalkInReceiptAction(input: WalkInReceiptInput) {
       lateCheckOut: 0,
       securityDeposit: data.securityDeposit,
       additionalServices: [],
-    });
+    }, { allowOverlap: true });
     if (!('reservationId' in reservation) || !reservation.reservationId) {
       return reservation;
     }

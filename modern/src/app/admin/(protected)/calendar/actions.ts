@@ -89,7 +89,7 @@ export async function getReservations(monthStart: string, monthEnd: string) {
 
 import { reservationFormSchema } from '@/lib/validations';
 
-export async function createReservation(data: z.infer<typeof reservationFormSchema>) {
+export async function createReservation(data: z.infer<typeof reservationFormSchema>, options: { allowOverlap?: boolean } = {}) {
   let session;
   try {
     session = await requireAdmin();
@@ -116,7 +116,7 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
         throw new Error('INVALID_UNIT');
       }
 
-      const overlapping = (await tx.select().from(reservations).where(
+      const overlapping = options.allowOverlap ? undefined : (await tx.select().from(reservations).where(
         and(
           eq(reservations.unitId, validData.unitId),
           or(eq(reservations.bookingStatus, 'pending'), eq(reservations.bookingStatus, 'confirmed')),
@@ -267,7 +267,7 @@ export async function createReservation(data: z.infer<typeof reservationFormSche
         throw new Error('INVALID_UNIT');
       }
 
-      const overlapping = tx.select().from(reservations).where(
+      const overlapping = options.allowOverlap ? undefined : tx.select().from(reservations).where(
         and(
           eq(reservations.unitId, validData.unitId),
           or(eq(reservations.bookingStatus, 'pending'), eq(reservations.bookingStatus, 'confirmed')),
