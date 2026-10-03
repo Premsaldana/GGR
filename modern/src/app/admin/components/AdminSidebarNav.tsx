@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Calendar, ExternalLink, FileText, LayoutDashboard, Tag } from 'lucide-react';
+import { Calendar, ExternalLink, FileText, LayoutDashboard, ReceiptText, Tag } from 'lucide-react';
 
 const links = [
   { href: '/admin', label: 'Dashboard', Icon: LayoutDashboard },
   { href: '/admin/calendar', label: 'Calendar', Icon: Calendar },
+  { href: '/admin/walk-in', label: 'Walk-in receipt', Icon: ReceiptText },
   { href: '/admin/pricing', label: 'Room prices', Icon: Tag },
   { href: '/admin/invoices', label: 'Invoices', Icon: FileText },
 ];

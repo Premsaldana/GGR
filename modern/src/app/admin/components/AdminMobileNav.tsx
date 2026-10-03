@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { Calendar, Download, ExternalLink, FileText, LayoutDashboard, LogOut, Menu, Tag, X } from 'lucide-react';
+import { Calendar, Download, ExternalLink, FileText, LayoutDashboard, LogOut, Menu, ReceiptText, Tag, X } from 'lucide-react';
 import { logout } from '@/app/admin/actions';
 import { isActivePath } from './AdminSidebarNav';
 
 const links = [
   { href: '/admin', label: 'Dashboard', Icon: LayoutDashboard },
   { href: '/admin/calendar', label: 'Calendar', Icon: Calendar },
+  { href: '/admin/walk-in', label: 'Walk-in receipt', Icon: ReceiptText },
   { href: '/admin/pricing', label: 'Room prices', Icon: Tag },
   { href: '/admin/invoices', label: 'Invoices', Icon: FileText },
 ];
