@@ -34,12 +34,14 @@ export async function recordPaymentAction(
         await tx.insert(invoicePayments).values({ id: paymentId, invoiceId, amountMinorUnits: payload.amountMinorUnits, paymentMode: payload.paymentMode, paymentStatus: 'completed', receivedAt: new Date(), reference: payload.reference || null, notes: payload.notes || null, recordedBy: session.userId, createdAt: new Date() }).execute();
         const paymentsResult = (await tx.select({ total: sum(invoicePayments.amountMinorUnits) }).from(invoicePayments).where(eq(invoicePayments.invoiceId, invoiceId)).execute())[0];
         const totalPaid = invoice.advanceMinorUnits + Number(paymentsResult?.total || 0);
+        const balanceMinorUnits = Math.max(0, invoice.totalMinorUnits - totalPaid);
         let newStatus = reservation.paymentStatus;
         if (totalPaid >= invoice.totalMinorUnits) newStatus = 'paid';
         else if (totalPaid > invoice.advanceMinorUnits) newStatus = 'partially_paid';
         if (newStatus !== reservation.paymentStatus) await tx.update(reservations).set({ paymentStatus: newStatus, updatedAt: new Date() }).where(eq(reservations.id, reservation.id)).execute();
+        await tx.update(invoices).set({ balanceMinorUnits }).where(eq(invoices.id, invoiceId)).execute();
         await tx.insert(auditEvents).values({ id: crypto.randomUUID(), actorUserId: session.userId, entityType: 'invoice_payment', entityId: paymentId, eventType: 'CREATE', createdAt: new Date() }).execute();
-        return { success: true, paymentId, newStatus, totalPaid };
+        return { success: true, paymentId, newStatus, totalPaid, balanceMinorUnits };
       });
     }
 
@@ -80,6 +82,7 @@ export async function recordPaymentAction(
       
       const additionalPaid = paymentsResult?.total || 0;
       const totalPaid = invoice.advanceMinorUnits + Number(additionalPaid);
+      const balanceMinorUnits = Math.max(0, invoice.totalMinorUnits - totalPaid);
       
       let newStatus = reservation.paymentStatus;
       if (totalPaid >= invoice.totalMinorUnits) {
@@ -91,6 +94,7 @@ export async function recordPaymentAction(
       if (newStatus !== reservation.paymentStatus) {
         tx.update(reservations).set({ paymentStatus: newStatus, updatedAt: new Date() }).where(eq(reservations.id, reservation.id)).run();
       }
+      tx.update(invoices).set({ balanceMinorUnits }).where(eq(invoices.id, invoiceId)).run();
 
       tx.insert(auditEvents).values({
         id: crypto.randomUUID(),
@@ -101,7 +105,7 @@ export async function recordPaymentAction(
         createdAt: new Date(),
       }).run();
 
-      return { success: true, paymentId, newStatus, totalPaid };
+      return { success: true, paymentId, newStatus, totalPaid, balanceMinorUnits };
     });
 
     return result;

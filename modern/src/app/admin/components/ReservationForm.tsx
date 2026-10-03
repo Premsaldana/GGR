@@ -19,7 +19,7 @@ const formSchema = z.object({
   adults: z.number().min(1),
   children: z.number().min(0),
   bookingStatus: z.enum(['pending', 'confirmed', 'cancelled']),
-  paymentMode: z.enum(['UPI', 'CASH', 'BANK_TRANSFER']).optional().or(z.literal('')),
+  paymentMode: z.enum(['UPI', 'CASH', 'CARD', 'BANK_TRANSFER']).optional().or(z.literal('')),
   notes: z.string().optional(),
   
   // Pricing inputs
@@ -80,7 +80,7 @@ export default function ReservationForm({
     setServerError(null);
     const payload = {
       ...data,
-      paymentMode: data.paymentMode === '' ? undefined : (data.paymentMode as "UPI" | "CASH" | "BANK_TRANSFER" | undefined),
+      paymentMode: data.paymentMode === '' ? undefined : (data.paymentMode as "UPI" | "CASH" | "CARD" | "BANK_TRANSFER" | undefined),
       accommodationRate: data.accommodationRate,
       extraPersonRate: data.extraPersonRate,
       earlyCheckIn: data.earlyCheckIn,
@@ -355,6 +355,7 @@ export default function ReservationForm({
                   <option value="">None</option>
                   <option value="UPI">UPI</option>
                   <option value="CASH">CASH</option>
+                  <option value="CARD">CARD</option>
                   <option value="BANK_TRANSFER">BANK TRANSFER</option>
                 </select>
               </div>
