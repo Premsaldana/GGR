@@ -2,6 +2,15 @@ import React from 'react';
 import { Page, Text, View, Document, StyleSheet, renderToStream } from '@react-pdf/renderer';
 import { calculateInvoicePaymentSummary } from '@/lib/invoice';
 
+const formatInvoiceDate = (value: string | Date | undefined) => {
+  if (!value) return 'Pending';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Pending';
+  return [date.getDate(), date.getMonth() + 1, date.getFullYear()]
+    .map((part, index) => index < 2 ? String(part).padStart(2, '0') : String(part))
+    .join('.');
+};
+
 const styles = StyleSheet.create({
   page: { 
     padding: 40, 
@@ -12,38 +21,68 @@ const styles = StyleSheet.create({
   },
   // --- Header ---
   headerContainer: {
+    marginBottom: 20,
+    borderRadius: 2,
+    overflow: 'hidden'
+  },
+  headerMain: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    borderBottom: '1.5px solid #233B35',
-    paddingBottom: 15,
-    marginBottom: 20
+    minHeight: 96,
+    backgroundColor: '#176C6A'
+  },
+  headerBrandPanel: {
+    width: '65%',
+    padding: 16,
+    borderRight: '1px solid #B5E2E1'
+  },
+  headerMetaPanel: {
+    width: '35%',
+    padding: 16,
+    backgroundColor: '#075B59',
+    alignItems: 'flex-end'
   },
   brandName: {
-    fontSize: 28,
+    fontSize: 21,
     fontWeight: 'bold',
-    color: '#233B35',
-    marginBottom: 2
+    color: '#FFFFFF',
+    marginBottom: 5,
+    textTransform: 'uppercase'
   },
   brandSub: {
-    fontSize: 9,
-    color: '#718779',
-    textTransform: 'uppercase',
-    letterSpacing: 1
+    fontSize: 8.5,
+    color: '#E0F4F3',
+    marginBottom: 9
+  },
+  brandAddress: {
+    fontSize: 7.5,
+    color: '#C8E8E7',
+    lineHeight: 1.3
   },
   voucherTitle: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: 'bold',
-    color: '#B75E3C',
+    color: '#E1B94A',
     textTransform: 'uppercase',
     textAlign: 'right',
-    marginBottom: 4
+    marginBottom: 12
   },
   voucherMeta: {
-    fontSize: 9,
-    color: '#55675D',
+    fontSize: 8,
+    color: '#D8EFEE',
     textAlign: 'right',
-    marginBottom: 2
+    marginBottom: 5
+  },
+  contactStrip: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    minHeight: 29,
+    paddingHorizontal: 16,
+    backgroundColor: '#DDF3F2'
+  },
+  contactText: {
+    fontSize: 7.5,
+    color: '#176C6A'
   },
 
   // --- Intro ---
@@ -249,14 +288,22 @@ const InvoiceDocument = ({ invoice, snapshot, payments }: InvoicePDFProps) => {
         
         {/* Header */}
         <View style={styles.headerContainer}>
-          <View>
-            <Text style={styles.brandName}>Goa Garden Resort</Text>
-            <Text style={styles.brandSub}>Private Pool Villa • Colva, South Goa</Text>
+          <View style={styles.headerMain}>
+            <View style={styles.headerBrandPanel}>
+              <Text style={styles.brandName}>Goa Garden Resort</Text>
+              <Text style={styles.brandSub}>5 Bedroom Private Pool Villa  •  Colva, South Goa</Text>
+              <Text style={styles.brandAddress}>Besides Colva Police Station, Colva–Benaulim Road, Salcete, South Goa – 403708</Text>
+            </View>
+            <View style={styles.headerMetaPanel}>
+              <Text style={styles.voucherTitle}>Booking Invoice</Text>
+              <Text style={styles.voucherMeta}>Reservation #: {invoice.invoiceNumber || 'Pending'}</Text>
+              <Text style={styles.voucherMeta}>Date of Issue: {formatInvoiceDate(invoice.issuedAt || invoice.createdAt)}</Text>
+            </View>
           </View>
-          <View>
-            <Text style={styles.voucherTitle}>Booking Voucher</Text>
-            <Text style={styles.voucherMeta}>Ref: {invoice.invoiceNumber}</Text>
-            <Text style={styles.voucherMeta}>Issued: {new Date(invoice.issuedAt || invoice.createdAt).toLocaleDateString()}</Text>
+          <View style={styles.contactStrip}>
+            <Text style={styles.contactText}>Phone  +91 7813093075</Text>
+            <Text style={styles.contactText}>Email  goagardenresort@gmail.com</Text>
+            <Text style={styles.contactText}>Web  www.goagardenresort.com</Text>
           </View>
         </View>
 

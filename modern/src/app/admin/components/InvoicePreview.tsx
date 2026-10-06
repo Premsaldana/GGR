@@ -3,7 +3,7 @@
 import React from 'react';
 import { InvoiceCalculationResult } from '@/lib/invoice';
 import { PaymentTracker } from './PaymentTracker';
-import { Calendar, Users, MapPin, CreditCard, AlertCircle } from 'lucide-react';
+import { Calendar, Users, MapPin, AlertCircle } from 'lucide-react';
 
 interface InvoicePreviewProps {
   invoiceId?: string;
@@ -37,28 +37,26 @@ export function InvoicePreview({ invoiceId, reservation, calculation, lineItems,
   return (
     <div className="max-w-5xl mx-auto bg-white p-8 md:p-14 text-[#1D2422] font-sans border border-[#E8E1D6] shadow-lg rounded-sm">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-[#E8E1D6] pb-8 mb-8">
-        <div className="space-y-1">
-          <h1 className="text-4xl font-serif text-[#233B35] tracking-tight">GOA GARDEN RESORT</h1>
-          <p className="text-[#718779] text-sm uppercase tracking-widest font-medium">Private Pool Villa</p>
-          <div className="mt-4 pt-4 text-sm text-[#55675D] space-y-1">
-            <p>Besides Colva Police Station,</p>
-            <p>Colva–Benaulim Road, Salcete, South Goa – 403708</p>
-            <p className="pt-2 flex items-center gap-4">
-              <span>91-7813093075</span>
-              <span className="text-[#E8E1D6]">|</span>
-              <span>goagardenresort@gmail.com</span>
-            </p>
+      <div className="mb-8 overflow-hidden rounded-sm">
+        <div className="flex flex-col md:flex-row bg-[#176C6A] text-white">
+          <div className="flex-1 border-b border-[#B5E2E1] p-6 md:border-b-0 md:border-r">
+            <h1 className="text-3xl font-bold uppercase tracking-tight md:text-4xl">GOA GARDEN RESORT</h1>
+            <p className="mt-2 text-sm text-[#E0F4F3]">5 Bedroom Private Pool Villa <span className="mx-1">•</span> Colva, South Goa</p>
+            <p className="mt-4 text-xs leading-relaxed text-[#C8E8E7]">Besides Colva Police Station, Colva–Benaulim Road, Salcete, South Goa – 403708</p>
+          </div>
+          <div className="flex w-full flex-col items-start bg-[#075B59] p-6 md:w-[35%] md:items-end">
+            <h2 className="text-xl font-bold uppercase tracking-wide text-[#E1B94A]">Booking Invoice</h2>
+            {isDraft && <span className="mt-2 rounded bg-white/15 px-2 py-1 text-xs text-[#E0F4F3]">DRAFT</span>}
+            <div className="mt-5 space-y-2 text-left text-xs text-[#D8EFEE] md:text-right">
+              <p>Reservation #: <span className="font-semibold text-white">{reservation.reservationNumber || 'Pending'}</span></p>
+              <p>Date of Issue: <span className="font-semibold text-white">{isDraft ? 'Not Issued' : new Date().toLocaleDateString('en-GB')}</span></p>
+            </div>
           </div>
         </div>
-        <div className="mt-8 md:mt-0 md:text-right">
-          <h2 className="text-2xl font-semibold tracking-widest text-[#B75E3C] uppercase">
-            Booking Voucher {isDraft && <span className="text-sm align-middle bg-gray-100 text-gray-500 px-2 py-1 rounded ml-2 tracking-normal">(DRAFT)</span>}
-          </h2>
-          <div className="mt-6 p-4 bg-[#FFFCF6] border border-[#E8E1D6] rounded text-sm inline-block text-left md:text-right">
-            <p className="flex justify-between gap-8"><span className="text-[#718779]">Reservation #</span> <span className="font-semibold">{reservation.reservationNumber || 'Pending'}</span></p>
-            <p className="flex justify-between gap-8 mt-2"><span className="text-[#718779]">Date of Issue</span> <span className="font-semibold">{isDraft ? 'Not Issued' : new Date().toLocaleDateString('en-IN')}</span></p>
-          </div>
+        <div className="flex flex-col justify-between gap-2 bg-[#DDF3F2] px-6 py-3 text-xs font-medium text-[#176C6A] sm:flex-row">
+          <span>Phone&nbsp; +91 7813093075</span>
+          <span>Email&nbsp; goagardenresort@gmail.com</span>
+          <span>Web&nbsp; www.goagardenresort.com</span>
         </div>
       </div>
 
