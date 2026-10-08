@@ -23,7 +23,9 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://goagardenresort.vercel.app";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes("localhost")
+  ? process.env.NEXT_PUBLIC_SITE_URL
+  : "https://goagardenresort.vercel.app";
 const structuredData = {
   "@context": "https://schema.org",
   "@graph": [

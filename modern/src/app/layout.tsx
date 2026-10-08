@@ -8,10 +8,13 @@ import { siteConfig } from "@/content/site";
 import "./globals.css";
 import "./stay-search.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-  || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null)
-  || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
-  || "http://localhost:3000";
+const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+const siteUrl = configuredSiteUrl && !configuredSiteUrl.includes("localhost")
+  ? configuredSiteUrl
+  : (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null)
+    || (process.env.VERCEL_ENV === "production" || process.env.VERCEL === "1" ? "https://goagardenresort.vercel.app" : null)
+    || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+    || "http://localhost:3000";
 
 /**
  * Font setup — Cormorant Garamond (display serif) + Inter (neutral sans)

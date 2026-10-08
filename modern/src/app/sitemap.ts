@@ -1,8 +1,13 @@
 import { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-    || (process.env.VERCEL_ENV === "production" ? "https://goagardenresort.vercel.app" : "http://localhost:3000");
+  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const productionFallback = process.env.VERCEL_ENV === "production" || process.env.VERCEL === "1"
+    ? "https://goagardenresort.vercel.app"
+    : "http://localhost:3000";
+  const siteUrl = configuredSiteUrl && !configuredSiteUrl.includes("localhost")
+    ? configuredSiteUrl
+    : productionFallback;
 
   return [
     {

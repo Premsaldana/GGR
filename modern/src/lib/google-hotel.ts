@@ -4,7 +4,9 @@ import { nextIsoDate } from '@/lib/pricing-core';
 export const GOOGLE_HOTEL_ID = 'ggr-goa-garden-resort';
 export const GOOGLE_ROOM_ID = 'private-pool-resort';
 export const GOOGLE_PACKAGE_ID = 'standard-direct';
-export const GOOGLE_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://goagardenresort.vercel.app';
+export const GOOGLE_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes('localhost')
+  ? process.env.NEXT_PUBLIC_SITE_URL
+  : 'https://goagardenresort.vercel.app';
 export const GOOGLE_LATITUDE = process.env.GOOGLE_HOTEL_LATITUDE || '15.2779104';
 export const GOOGLE_LONGITUDE = process.env.GOOGLE_HOTEL_LONGITUDE || '73.9265747';
 
