@@ -46,6 +46,9 @@ export const metadata: Metadata = {
     "An entire gated five-bedroom resort in Colva, South Goa, with a private pool, tropical garden, and space for up to 20 guests.",
   keywords: ["private resort goa", "5 bedroom villa goa", "private pool villa colva", "group stay south goa", "goa garden resort"],
   authors: [{ name: siteConfig.propertyName }],
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     type: "website",
     siteName: siteConfig.propertyName,
@@ -62,6 +65,13 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
 };
 

@@ -20,6 +20,55 @@ export const metadata: Metadata = {
   title: "Goa Garden Resort — Your Private 5-Bedroom Resort in Colva",
   description:
     "Take over an entire gated 5-bedroom resort in Colva, South Goa, with a private swimming pool, tropical garden, and poolside dining for up to 20 guests.",
+  alternates: { canonical: "/" },
+};
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://goagardenresort.vercel.app";
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Hotel",
+      "@id": `${siteUrl}/#hotel`,
+      name: siteConfig.propertyName,
+      url: siteUrl,
+      image: [
+        `${siteUrl}/resort/hero-pool-night.webp`,
+        `${siteUrl}/resort/pool-courtyard-day.webp`,
+        `${siteUrl}/resort/villa-cobalt.webp`,
+      ],
+      description: "A private five-bedroom resort with an exclusive pool and tropical garden in Colva, South Goa.",
+      telephone: siteConfig.phone,
+      email: siteConfig.email,
+      priceRange: "₹₹₹",
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: siteConfig.address.street,
+        addressLocality: siteConfig.address.city,
+        addressRegion: siteConfig.address.state,
+        postalCode: siteConfig.address.postalCode,
+        addressCountry: "IN",
+      },
+      geo: {
+        "@type": "GeoCoordinates",
+        latitude: 15.2779104,
+        longitude: 73.9265747,
+      },
+      amenityFeature: [
+        { "@type": "LocationFeatureSpecification", name: "Private swimming pool", value: true },
+        { "@type": "LocationFeatureSpecification", name: "Free Wi-Fi", value: true },
+        { "@type": "LocationFeatureSpecification", name: "Free parking", value: true },
+      ],
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${siteUrl}/#website`,
+      url: siteUrl,
+      name: siteConfig.propertyName,
+      publisher: { "@id": `${siteUrl}/#hotel` },
+      inLanguage: "en-IN",
+    },
+  ],
 };
 
 const whatsappUrl = `https://wa.me/${siteConfig.whatsappNumber}?text=${encodeURIComponent(
@@ -44,6 +93,7 @@ const amenities = [
 export default function HomePage() {
   return (
     <main className="resort-site">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} />
       <section className="hero" aria-labelledby="hero-title">
         <ParallaxMedia
           src="/resort/hero-pool-night.webp"
