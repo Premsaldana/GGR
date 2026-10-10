@@ -7,6 +7,7 @@ import { LayoutBoundary } from "@/components/resort/LayoutBoundary";
 import { siteConfig } from "@/content/site";
 import "./globals.css";
 import "./stay-search.css";
+import "./seo-guide.css";
 
 const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 const siteUrl = configuredSiteUrl && !configuredSiteUrl.includes("localhost")

@@ -28,5 +28,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily",
       priority: 0.8,
     },
+    {
+      url: `${siteUrl}/private-pool-villa-colva-goa`,
+      lastModified: new Date().toISOString(),
+      changeFrequency: "monthly",
+      priority: 0.9,
+    },
   ];
 }

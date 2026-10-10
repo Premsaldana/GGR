@@ -317,6 +317,9 @@ export default function HomePage() {
             <Link href="/contact" className="button button--sun">
               Check availability <ArrowUpRight aria-hidden="true" size={18} />
             </Link>
+            <Link href="/private-pool-villa-colva-goa" className="text-link text-link--light">
+              Explore the private pool villa <ArrowUpRight aria-hidden="true" size={16} />
+            </Link>
             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="text-link text-link--light">
               Or talk to us on WhatsApp <ArrowUpRight aria-hidden="true" size={16} />
             </a>
